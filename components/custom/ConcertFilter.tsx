@@ -24,7 +24,7 @@ export function ConcertFilter({
   const selectedConcertId = searchParams.get('concertId');
 
   // 団体に所属する演奏会一覧をConvexからリアルタイムに取得
-  const concerts = useQuery(api.concerts.getByOrganization, {
+  const concerts = useQuery(api.concerts.getConcertsByOrganization, {
     organizationId,
   });
 

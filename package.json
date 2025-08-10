@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "opennextjs-cloudflare build",
+    "build": "next build",
     "start": "next start",
     "check": "biome check --write",
     "test": "vitest run",
     "convex": "convex dev",
-    "preview": "opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare deploy",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "shadcn": "pnpx shadcn",
     "repomix": "pnpx repomix"

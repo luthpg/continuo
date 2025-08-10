@@ -1,9 +1,10 @@
 import { v } from 'convex/values';
-import { type DataModel, Id } from './_generated/dataModel';
+import type { DataModel } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import { isValidRoleUser } from './lib/role';
 
 // 指定された演奏会IDに紐づくイベント一覧を取得する
-export const getByConcert = query({
+export const getEventsByConcert = query({
   // フロントエンドから受け取る引数の型を定義
   args: {
     concertId: v.id('concerts'),
@@ -13,6 +14,28 @@ export const getByConcert = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error('Not authenticated');
+    }
+    const clerkUserId = identity.subject;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkUserId))
+      .first();
+
+    if (!user) {
+      // ユーザーがConvexに存在しない場合エラー
+      throw new Error('User not found');
+    }
+
+    // このユーザーがこの演奏会の権限を持っているかチェック
+    const membership = await ctx.db
+      .query('concertMemberships')
+      .withIndex('by_user_concert', (q) =>
+        q.eq('userId', user._id).eq('concertId', args.concertId),
+      )
+      .first();
+    if (!membership) {
+      throw new Error('Not authorized');
     }
 
     // データベースからconcertIdに一致するイベントをインデックスを使って効率的に検索
@@ -46,30 +69,15 @@ export const createEvent = mutation({
     }
     const clerkUserId = identity.subject;
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkUserId))
-      .first();
-
-    if (!user) {
-      // ユーザーがConvexに存在しない場合、（通常はgetCurrentUserが事前に作成するため稀だが）エラー
-      throw new Error('User not found');
-    }
-
-    // このユーザーがこの団体(organizationId)の
-    // イベントを作成する権限（例：adminロール）を持っているかチェック
-    const membership = await ctx.db
-      .query('concertMemberships')
-      .withIndex('by_user_concert', (q) =>
-        q.eq('userId', user._id).eq('concertId', args.concertId),
-      )
-      .first();
-
     const adminRoles: Array<
       DataModel['concertMemberships']['document']['role']
     > = ['admin'];
-    if (!membership || !adminRoles.includes(membership.role)) {
-      throw new Error('Not authorized');
+    const isAuthed = await isValidRoleUser(ctx, clerkUserId, {
+      concertId: args.concertId,
+      requiredRoles: adminRoles,
+    });
+    if (!isAuthed) {
+      throw Error('Not authorized');
     }
 
     // 新しいイベントをデータベースに挿入
