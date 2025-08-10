@@ -1,3 +1,6 @@
+import type { WebhookEvent } from '@clerk/nextjs/server';
+import { Webhook } from 'svix';
+
 /**
  * SHA-256ハッシュを計算する関数 (Web Crypto API互換)。
  * Convex環境で使用することを想定。
@@ -20,4 +23,29 @@ export async function sha256(text: string): Promise<string> {
     .join('');
 
   return hexHash;
+}
+
+export async function validateRequest(
+  req: Request,
+): Promise<WebhookEvent | undefined> {
+  const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    throw new Error('CLERK_WEBHOOK_SECRET is not set');
+  }
+
+  const payloadString = await req.text();
+  const svixHeaders = {
+    'svix-id': req.headers.get('svix-id') ?? '',
+    'svix-timestamp': req.headers.get('svix-timestamp') ?? '',
+    'svix-signature': req.headers.get('svix-signature') ?? '',
+  };
+
+  const wh = new Webhook(webhookSecret);
+  try {
+    const event = wh.verify(payloadString, svixHeaders) as WebhookEvent;
+    return event;
+  } catch (error) {
+    console.error('Error verifying webhook:', error);
+    return undefined;
+  }
 }

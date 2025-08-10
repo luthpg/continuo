@@ -53,6 +53,7 @@
     "react-dom": "19.1.0",
     "recharts": "2.15.4",
     "sonner": "^2.0.7",
+    "svix": "^1.71.0",
     "swr": "^2.3.5",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
