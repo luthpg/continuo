@@ -72,5 +72,9 @@
     "typescript": "^5",
     "vitest": "^3.2.4",
     "wrangler": "^4.28.1"
-  }
+  },
+  "peerDependencies": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@10.14.0"
 }
