@@ -16,7 +16,7 @@ export function ThemeProvider({
   children,
   ...props
 }: React.ComponentProps<typeof NextThemesProvider> & {
-  organizationId: Id<'organizations'>;
+  organizationId?: Id<'organizations'>;
 }) {
   const organization = useQuery(api.organizations.get, { id: organizationId });
 

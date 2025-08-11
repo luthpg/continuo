@@ -5,7 +5,6 @@ import { jaJP } from '@clerk/localizations';
 import ConvexClientProvider from '@/components/custom/ConvexClientProvider';
 import { ThemeProvider } from '@/components/custom/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
-import type { Id } from '@/convex/_generated/dataModel';
 
 const inter = Inter({ subsets: ['latin'] });
 const notoSansJP = Noto_Sans_JP({ subsets: ['latin'] });
@@ -49,7 +48,7 @@ export default function RootLayout({
       <body className={`${inter.className} ${notoSansJP.className}`}>
         <ConvexClientProvider localization={jaJP}>
           <ThemeProvider
-            organizationId={'test' as Id<'organizations'>}
+            organizationId={undefined}
             attribute="class"
             defaultTheme="system"
             enableSystem

@@ -3,7 +3,7 @@ import type { QueryCtx } from '../_generated/server';
 
 export async function isValidRoleUser(
   ctx: QueryCtx,
-  clerkUserId: string,
+  clerkUserId: string | undefined,
   {
     requiredRoles,
     concertId,
@@ -16,7 +16,9 @@ export async function isValidRoleUser(
 ): Promise<boolean> {
   const user = await ctx.db
     .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkUserId))
+    .withIndex('by_clerk_id', (q) =>
+      q.eq('clerkId', clerkUserId ?? '---blank-text---'),
+    )
     .first();
 
   if (!user) {

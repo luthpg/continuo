@@ -6,7 +6,18 @@
     "useIgnoreFile": false
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": [
+      "app/**/*",
+      "components/**/*",
+      "convex/**/*",
+      "hooks/**/*",
+      "lib/**/*",
+      "tests/**/*",
+      "types/**/*",
+      "./*.ts",
+      "./*.json"
+    ]
   },
   "formatter": {
     "enabled": true,
