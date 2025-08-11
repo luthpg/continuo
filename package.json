@@ -13,7 +13,8 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "shadcn": "pnpx shadcn",
-    "repomix": "pnpx repomix"
+    "repomix": "pnpx repomix",
+    "depcheck": "pnpx depcheck"
   },
   "dependencies": {
     "@clerk/localizations": "^3.20.8",
@@ -42,6 +43,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.25.4",
+    "dayjs": "^1.11.13",
     "dotenv": "^17.2.1",
     "happy-dom": "^18.0.1",
     "jsdom": "^26.1.0",

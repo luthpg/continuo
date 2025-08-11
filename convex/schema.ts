@@ -97,7 +97,7 @@ export default defineSchema({
       v.literal('present'), // 出席
       v.literal('absent'), // 欠席
       v.literal('late'), // 遅刻
-      v.literal('absent'), // 早退
+      v.literal('leave_early'), // 早退
       v.literal('pending'), // 未定
     ),
     comment: v.optional(v.string()),

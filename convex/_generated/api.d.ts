@@ -12,14 +12,14 @@ import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
-} from 'convex/server';
-import type * as concerts from '../concerts.js';
-import type * as events from '../events.js';
-import type * as http from '../http.js';
-import type * as lib_role from '../lib/role.js';
-import type * as lib_utils from '../lib/utils.js';
-import type * as organizations from '../organizations.js';
-import type * as users from '../users.js';
+} from "convex/server";
+import type * as concerts from "../concerts.js";
+import type * as events from "../events.js";
+import type * as http from "../http.js";
+import type * as lib_role from "../lib/role.js";
+import type * as lib_utils from "../lib/utils.js";
+import type * as organizations from "../organizations.js";
+import type * as users from "../users.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -33,16 +33,16 @@ declare const fullApi: ApiFromModules<{
   concerts: typeof concerts;
   events: typeof events;
   http: typeof http;
-  'lib/role': typeof lib_role;
-  'lib/utils': typeof lib_utils;
+  "lib/role": typeof lib_role;
+  "lib/utils": typeof lib_utils;
   organizations: typeof organizations;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, 'public'>
+  FunctionReference<any, "public">
 >;
 export declare const internal: FilterApi<
   typeof fullApi,
-  FunctionReference<any, 'internal'>
+  FunctionReference<any, "internal">
 >;
