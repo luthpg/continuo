@@ -1,7 +1,7 @@
 'use client';
 
 import { useConvexAuth } from 'convex/react';
-import { redirect, useSearchParams } from 'next/navigation';
+import { redirect, usePathname, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { AppSidebar } from '@/components/custom/app-sidebar';
 import { DynamicTheme } from '@/components/custom/DynamicTheme';
@@ -14,12 +14,20 @@ function HallLayoutContent({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // アクセスしているページのパスを取得
+  const path = usePathname();
+
   const searchParams = useSearchParams();
   const organizationId = searchParams.get('organizationId');
 
   // organizationIdがURLにない場合、選択ページにリダイレクト
-  if (!organizationId) {
-    redirect('/hall/select-org');
+  if (
+    (organizationId == null ||
+      organizationId === 'null' ||
+      organizationId === '') &&
+    path !== '/hall/select-org'
+  ) {
+    return redirect('/hall/select-org');
   }
 
   return (
@@ -28,11 +36,11 @@ function HallLayoutContent({
         {
           '--sidebar-width': 'calc(var(--spacing) * 64)',
           '--header-height': 'auto',
-          'min-height': 'calc(var(--spacing) * 14)',
+          minHeight: 'calc(var(--spacing) * 14)',
         } as React.CSSProperties
       }
     >
-      <DynamicTheme organizationId={organizationId} />
+      {organizationId && <DynamicTheme organizationId={organizationId} />}
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
@@ -56,8 +64,7 @@ export default function Layout({
   }
 
   if (!isAuthenticated) {
-    // このケースはmiddlewareで処理されるはずだが
-    return redirect('/');
+    return redirect('/sign-in');
   }
 
   return (

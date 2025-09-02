@@ -5,7 +5,7 @@ import { useQuery } from 'convex/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { DataTable } from '@/components/custom/data-table';
-import { columns } from '@/components/custom/data-table-columns';
+import { getColumns } from '@/components/custom/data-table-columns';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -58,7 +58,7 @@ function MembersPageContent() {
       </div>
 
       {members && parts ? (
-        <DataTable columns={columns(parts)} data={members} />
+        <DataTable columns={getColumns(parts)} data={members} />
       ) : (
         <Skeleton className="w-full h-[calc(100vh-14rem)] rounded-lg" />
       )}

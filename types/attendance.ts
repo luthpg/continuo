@@ -8,6 +8,7 @@ export type TMember = {
   _id: Doc<'users'>['_id'];
   name: string;
   part: string;
+  imageUrl: string;
 };
 
 // イベント（練習日程）情報

@@ -6,6 +6,7 @@ import { PartCell } from '@/components/custom/PartCell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import type { Doc } from '@/convex/_generated/dataModel';
 import type { TMember } from '@/types/member';
 
 const roleConfig = {
@@ -14,7 +15,7 @@ const roleConfig = {
   member: { label: 'メンバー', variant: 'outline' },
 } as const;
 
-export const columns: ColumnDef<TMember>[] = [
+export const getColumns = (parts: Doc<'parts'>[]): ColumnDef<TMember>[] => [
   {
     id: 'select',
     header: ({ table }) => (

@@ -192,6 +192,8 @@ export const getMembersByConcert = query({
           return {
             _id: user._id,
             name: user.name ?? 'No Name',
+            email: user.email ?? '',
+            imageUrl: user.imageUrl ?? '',
             part: partName,
           };
         }),

@@ -104,28 +104,9 @@ export const removeMember = mutation({
     }
 
     // 3. 関連する出欠情報を削除
-    const events = await ctx.db
-      .query('events')
-      .withIndex('by_concert', (q) =>
-        q.eq(
-          'concertId',
-          // このロジックは団体内の全演奏会を対象にする必要がある
-          // ここでは簡略化のため、特定の演奏会に絞らず全イベントを対象とする
-          // 実際にはorganizationIdでイベントを絞り込む
-          'concertId' as any,
-        ),
-      )
-      .collect(); // In a real app, filter events by organizationId
-    const eventIds = events.map((e) => e._id);
-
     const attendances = await ctx.db
       .query('attendances')
-      .filter((q) =>
-        q.and(
-          q.eq(q.field('userId'), args.targetUserId),
-          q.in(q.field('eventId'), eventIds),
-        ),
-      )
+      .withIndex('by_user', (q) => q.eq('userId', args.targetUserId))
       .collect();
 
     for (const attendance of attendances) {

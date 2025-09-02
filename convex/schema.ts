@@ -45,7 +45,8 @@ export default defineSchema({
     role: v.union(v.literal('admin'), v.literal('leader'), v.literal('member')),
   })
     .index('by_user_concert', ['userId', 'concertId'])
-    .index('by_role_concert', ['role', 'concertId']),
+    .index('by_role_concert', ['role', 'concertId'])
+    .index('by_concert', ['concertId']),
 
   programs: defineTable({
     organizationId: v.id('organizations'),
@@ -95,7 +96,9 @@ export default defineSchema({
     instead: v.optional(v.string()), // 代奏
     updatedDate: v.optional(v.string()),
     updatedBy: v.id('users'),
-  }).index('by_event_user', ['eventId', 'userId']),
+  })
+    .index('by_event_user', ['eventId', 'userId'])
+    .index('by_user', ['userId']),
 
   assets: defineTable({
     storageId: v.id('_storage'),

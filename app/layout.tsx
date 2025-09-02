@@ -1,4 +1,3 @@
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Noto_Sans_JP } from 'next/font/google';
 import '@/app/globals.css';
@@ -54,23 +53,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {/* ログイン済みの場合のみメインコンテンツを表示 */}
-            <SignedIn>{children}</SignedIn>
-            {/* 未ログインの場合はトップページ（将来的にはLPなど）を表示 */}
-            <SignedOut>
-              {/* ここでは仮にサインインボタンを中央に表示 */}
-              <div className="flex min-h-screen flex-col items-center justify-center">
-                <h1 className="logo-style text-6xl mb-8">Continuo.</h1>
-                <SignInButton mode="modal">
-                  <button
-                    type="button"
-                    className="rounded-full bg-blue-500 px-6 py-3 text-white"
-                  >
-                    Sign in
-                  </button>
-                </SignInButton>
-              </div>
-            </SignedOut>
+            {children}
             <Toaster duration={5000} position="bottom-right" richColors />
           </ThemeProvider>
         </ConvexClientProvider>

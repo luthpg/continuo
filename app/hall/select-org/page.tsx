@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { api } from '@/convex/_generated/api';
+import type { Doc } from '@/convex/_generated/dataModel';
 
 export default function SelectOrgPage() {
   const router = useRouter();
@@ -65,11 +66,13 @@ export default function SelectOrgPage() {
                   <SelectValue placeholder="団体を選択..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {organizations.map((org) => (
-                    <SelectItem key={org._id} value={org._id}>
-                      {org.name}
-                    </SelectItem>
-                  ))}
+                  {organizations
+                    .filter((org): org is Doc<'organizations'> => !!org)
+                    .map((org) => (
+                      <SelectItem key={org._id} value={org._id}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             ) : (

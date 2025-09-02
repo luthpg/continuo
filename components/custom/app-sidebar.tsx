@@ -56,9 +56,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: '席次表',
-      url: `/hall/seating-charts?organizationId=${organizationId}`,
+      url: `/hall/seatings?organizationId=${organizationId}`,
       icon: FileText,
-      isActive: pathname.startsWith('/hall/seating-charts'),
+      isActive: pathname.startsWith('/hall/seatings'),
     },
   ];
 

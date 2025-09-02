@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 
 function HeaderContent() {
   const router = useRouter();
@@ -54,11 +54,13 @@ function HeaderContent() {
               <SelectValue placeholder="団体を選択..." />
             </SelectTrigger>
             <SelectContent>
-              {organizations.map((org) => (
-                <SelectItem key={org._id} value={org._id}>
-                  {org.name}
-                </SelectItem>
-              ))}
+              {organizations
+                .filter((org): org is Doc<'organizations'> => !!org)
+                .map((org) => (
+                  <SelectItem key={org._id} value={org._id}>
+                    {org.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         ) : (
