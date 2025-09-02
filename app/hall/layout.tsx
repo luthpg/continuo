@@ -1,39 +1,68 @@
+'use client';
+
+import { useConvexAuth } from 'convex/react';
+import { redirect, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { AppSidebar } from '@/components/custom/app-sidebar';
+import { DynamicTheme } from '@/components/custom/DynamicTheme';
+import { FullPageSpinner } from '@/components/custom/FullPageSpinner';
 import { SiteHeader } from '@/components/custom/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+
+function HallLayoutContent({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get('organizationId');
+
+  // organizationIdがURLにない場合、選択ページにリダイレクト
+  if (!organizationId) {
+    redirect('/hall/select-org');
+  }
+
+  return (
+    <SidebarProvider
+      style={
+        {
+          '--sidebar-width': 'calc(var(--spacing) * 64)',
+          '--header-height': 'auto',
+          'min-height': 'calc(var(--spacing) * 14)',
+        } as React.CSSProperties
+      }
+    >
+      <DynamicTheme organizationId={organizationId} />
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <main className="@container/main flex flex-1 flex-col p-2 md:p-0">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
 
 export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { isAuthenticated, isLoading } = useConvexAuth();
+
+  if (isLoading) {
+    return <FullPageSpinner />;
+  }
+
+  if (!isAuthenticated) {
+    // このケースはmiddlewareで処理されるはずだが
+    return redirect('/');
+  }
+
   return (
-    <SidebarProvider
-      style={
-        {
-          '--sidebar-width': 'calc(var(--spacing) * 72)',
-          '--header-height': 'calc(var(--spacing) * 12)',
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <main className="@container/main flex flex-1 flex-col gap-2">
-          {children}
-        </main>
-        {/* <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
-              <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
-              </div>
-              <DataTable data={data} />
-            </div>
-          </div>
-        </div> */}
-      </SidebarInset>
-    </SidebarProvider>
+    <Suspense fallback={<FullPageSpinner />}>
+      <HallLayoutContent>{children}</HallLayoutContent>
+    </Suspense>
   );
 }

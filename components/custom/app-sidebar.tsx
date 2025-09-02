@@ -1,28 +1,16 @@
 'use client';
 
 import {
-  IconCamera,
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
-  IconSearch,
-  IconSettings,
-  IconUsers,
-} from '@tabler/icons-react';
+  CalendarDays,
+  FileText,
+  Home,
+  Music,
+  Settings,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import type * as React from 'react';
-
-import { NavDocuments } from '@/components/custom/nav-documents';
-import { NavMain } from '@/components/custom/nav-main';
-import { NavSecondary } from '@/components/custom/nav-secondary';
-import { NavUser } from '@/components/custom/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -32,125 +20,57 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-
-const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  navMain: [
-    {
-      title: 'Dashboard',
-      url: '#',
-      icon: IconDashboard,
-    },
-    {
-      title: 'Lifecycle',
-      url: '#',
-      icon: IconListDetails,
-    },
-    {
-      title: 'Analytics',
-      url: '#',
-      icon: IconChartBar,
-    },
-    {
-      title: 'Projects',
-      url: '#',
-      icon: IconFolder,
-    },
-    {
-      title: 'Team',
-      url: '#',
-      icon: IconUsers,
-    },
-  ],
-  navClouds: [
-    {
-      title: 'Capture',
-      icon: IconCamera,
-      isActive: true,
-      url: '#',
-      items: [
-        {
-          title: 'Active Proposals',
-          url: '#',
-        },
-        {
-          title: 'Archived',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Proposal',
-      icon: IconFileDescription,
-      url: '#',
-      items: [
-        {
-          title: 'Active Proposals',
-          url: '#',
-        },
-        {
-          title: 'Archived',
-          url: '#',
-        },
-      ],
-    },
-    {
-      title: 'Prompts',
-      icon: IconFileAi,
-      url: '#',
-      items: [
-        {
-          title: 'Active Proposals',
-          url: '#',
-        },
-        {
-          title: 'Archived',
-          url: '#',
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: 'Settings',
-      url: '#',
-      icon: IconSettings,
-    },
-    {
-      title: 'Get Help',
-      url: '#',
-      icon: IconHelp,
-    },
-    {
-      title: 'Search',
-      url: '#',
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: 'Data Library',
-      url: '#',
-      icon: IconDatabase,
-    },
-    {
-      name: 'Reports',
-      url: '#',
-      icon: IconReport,
-    },
-    {
-      name: 'Word Assistant',
-      url: '#',
-      icon: IconFileWord,
-    },
-  ],
-};
+import type { Id } from '@/convex/_generated/dataModel';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const organizationId = searchParams.get('organizationId') as
+    | Id<'organizations'>
+    | undefined;
+
+  const navMain = [
+    {
+      title: 'ホーム',
+      url: `/hall?organizationId=${organizationId}`,
+      icon: Home,
+      isActive: pathname === '/hall' && !pathname.includes('/hall/'),
+    },
+    {
+      title: '日程・出欠',
+      url: `/hall/calendar?organizationId=${organizationId}`,
+      icon: CalendarDays,
+      isActive: pathname.startsWith('/hall/calendar'),
+    },
+    {
+      title: 'メンバー',
+      url: `/hall/members?organizationId=${organizationId}`,
+      icon: Users,
+      isActive: pathname.startsWith('/hall/members'),
+    },
+    {
+      title: 'アセット',
+      url: `/hall/assets?organizationId=${organizationId}`,
+      icon: Music,
+      isActive: pathname.startsWith('/hall/assets'),
+    },
+    {
+      title: '席次表',
+      url: `/hall/seating-charts?organizationId=${organizationId}`,
+      icon: FileText,
+      isActive: pathname.startsWith('/hall/seating-charts'),
+    },
+  ];
+
+  const navSecondary = [
+    {
+      title: '団体設定',
+      url: `/hall/settings?organizationId=${organizationId}`,
+      icon: Settings,
+      isActive: pathname.startsWith('/hall/settings'),
+    },
+  ];
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -160,21 +80,53 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
+              <Link href={`/hall?organizationId=${organizationId}`}>
+                <Music className="!size-6" />
+                <span className="logo-style text-2xl font-semibold">
+                  Continuo.
+                </span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <SidebarMenu>
+          {navMain.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                isActive={item.isActive}
+                tooltip={item.title}
+              >
+                <Link href={item.url}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+
+      <SidebarFooter className="mt-auto">
+        <SidebarMenu>
+          {navSecondary.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                isActive={item.isActive}
+                tooltip={item.title}
+              >
+                <Link href={item.url}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

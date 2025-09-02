@@ -14,41 +14,33 @@ import type { Id } from '@/convex/_generated/dataModel';
 
 export function ConcertFilter({
   organizationId,
+  currentConcertId,
 }: {
   organizationId: Id<'organizations'>;
+  currentConcertId: string | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // 現在選択されている演奏会IDをURLのクエリパラメータから取得
-  const selectedConcertId = searchParams.get('concertId');
-
-  // 団体に所属する演奏会一覧をConvexからリアルタイムに取得
   const concerts = useQuery(api.concerts.getConcertsByOrganization, {
     organizationId,
   });
 
-  // ドロップダウンの値が変更されたときの処理
   const handleValueChange = (concertId: string) => {
-    // URLのクエリパラメータを更新してページを再読み込みさせる
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(searchParams.toString());
     params.set('concertId', concertId);
-    router.push(`?${params.toString()}`);
+    // ページパスを動的に取得してリダイレクト
+    const currentPath = window.location.pathname;
+    router.push(`${currentPath}?${params.toString()}`);
   };
 
   if (!concerts) {
-    // データロード中はローディング表示
     return (
-      <div className="w-[280px] h-10 rounded-md bg-gray-200 animate-pulse" />
+      <div className="w-full h-10 rounded-md bg-gray-200 animate-pulse md:w-[280px]" />
     );
   }
 
   return (
-    <Select
-      onValueChange={handleValueChange}
-      // URLにIDがあればそれを、なければ未選択状態にする
-      value={selectedConcertId ?? ''}
-    >
+    <Select onValueChange={handleValueChange} value={currentConcertId ?? ''}>
       <SelectTrigger className="w-full md:w-[280px]">
         <SelectValue placeholder="演奏会でフィルター" />
       </SelectTrigger>

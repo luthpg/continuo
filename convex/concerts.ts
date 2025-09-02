@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { query } from './_generated/server';
 import { isValidRoleUser } from './lib/role';
 
-// 指定された演奏会IDに紐づくイベント一覧を取得する
+// 指定された団体IDに紐づく演奏会一覧を取得する
 export const getConcertsByOrganization = query({
   args: {
     organizationId: v.id('organizations'),
@@ -15,15 +15,16 @@ export const getConcertsByOrganization = query({
     }
     const clerkUserId = identity.subject;
 
-    // 認証チェック: ユーザーが演奏会情報の閲覧権限を持っているか確認
+    // 認証チェック: ユーザーが団体情報の閲覧権限を持っているか確認
     const isAuthed = await isValidRoleUser(ctx, clerkUserId, {
       organizationId: args.organizationId,
+      requiredRoles: ['admin', 'subAdmin', 'member'], // メンバーなら誰でも閲覧可能
     });
     if (!isAuthed) {
-      throw Error('Not authorized');
+      throw new Error('Not authorized');
     }
 
-    // データベースからconcertIdに一致するイベントをインデックスを使って効率的に検索
+    // データベースからorganizationIdに一致する演奏会をインデックスを使って効率的に検索
     const concerts = await ctx.db
       .query('concerts')
       .withIndex('by_organization', (q) =>
@@ -32,5 +33,33 @@ export const getConcertsByOrganization = query({
       .collect();
 
     return concerts;
+  },
+});
+
+// 指定されたIDの演奏会情報を取得する
+export const getConcertById = query({
+  args: { id: v.id('concerts') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+
+    const concert = await ctx.db.get(args.id);
+    if (!concert) {
+      return null;
+    }
+
+    // 認証チェック: ユーザーがこの演奏会を閲覧する権限を持っているか確認
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: concert.organizationId,
+      requiredRoles: ['admin', 'subAdmin', 'member'],
+    });
+
+    if (!isAuthed) {
+      throw new Error('Not authorized to view this concert');
+    }
+
+    return concert;
   },
 });

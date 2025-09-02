@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { internalMutation, mutation, query } from './_generated/server';
 
 /**
@@ -103,22 +103,100 @@ export const deleteUserAndData = internalMutation({
 
     const convexUserId = user._id;
 
+    // ユーザーに関連するデータを削除 (例)
     // const bookmarks = await ctx.db
     //   .query('bookmarks')
     //   .withIndex('by_userId', (q) => q.eq('userId', convexUserId))
     //   .collect();
     // await Promise.all(bookmarks.map((bookmark) => ctx.db.delete(bookmark._id)));
 
-    // const apiKeys = await ctx.db
-    //   .query('apiKeys')
-    //   .withIndex('by_userId', (q) => q.eq('userId', convexUserId))
-    //   .collect();
-    // await Promise.all(apiKeys.map((key) => ctx.db.delete(key._id)));
-
     await ctx.db.delete(convexUserId);
 
     console.log(
       `Successfully deleted user ${convexUserId} and all associated data.`,
     );
+  },
+});
+
+/**
+ * ログインユーザーが所属する団体の一覧を取得するクエリ
+ */
+export const getUserMemberships = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first();
+
+    if (!user) {
+      return [];
+    }
+
+    const memberships = await ctx.db
+      .query('memberships')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .collect();
+
+    return memberships;
+  },
+});
+
+/**
+ * 指定された演奏会に所属するメンバーの一覧を取得するクエリ
+ */
+export const getMembersByConcert = query({
+  args: { concertId: v.id('concerts') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+
+    // ToDo: 権限チェック
+
+    const concertMemberships = await ctx.db
+      .query('concertMemberships')
+      .withIndex('by_concert', (q) => q.eq('concertId', args.concertId))
+      .collect();
+
+    const userIds = concertMemberships.map((m) => m.userId);
+
+    const users = await Promise.all(
+      userIds.map((userId) => ctx.db.get(userId)),
+    );
+
+    const members = await Promise.all(
+      users
+        .filter((user): user is Doc<'users'> => user !== null)
+        .map(async (user) => {
+          // パート情報を取得
+          const partMembership = await ctx.db
+            .query('partMemberships')
+            .withIndex('by_user', (q) => q.eq('userId', user._id))
+            .first();
+
+          let partName = '未設定';
+          if (partMembership) {
+            const part = await ctx.db.get(partMembership.partId);
+            if (part) {
+              partName = part.name;
+            }
+          }
+
+          return {
+            _id: user._id,
+            name: user.name ?? 'No Name',
+            part: partName,
+          };
+        }),
+    );
+
+    return members;
   },
 });
