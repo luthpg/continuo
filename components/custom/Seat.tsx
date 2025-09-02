@@ -28,7 +28,7 @@ export function Seat({ seat }: SeatProps) {
     >
       {seat.user ? (
         <DraggableMember
-          member={{ ...seat.user, part: 'Unknown' }} // パート情報は別途取得が必要
+          member={{ ...seat.user, name: seat.user.name ?? '', part: 'Unknown' }} // 繝代繝域ュ蝣ｱ縺ｯ蛻･騾泌叙蠕励′蠢ｦ
         />
       ) : (
         <span className="text-[10px] text-muted-foreground text-center">

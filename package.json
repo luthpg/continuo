@@ -8,7 +8,8 @@
     "start": "next start",
     "check": "biome check --write",
     "test": "vitest run",
-    "convex": "convex dev",
+    "convex": "convex dev --once",
+    "convex:w": "convex dev",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
@@ -81,5 +82,5 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "packageManager": "pnpm@10.14.0"
+  "packageManager": "pnpm@10.15.0"
 }

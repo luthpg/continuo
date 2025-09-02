@@ -1,9 +1,9 @@
 'use client';
 
-import { FullPageSpinner } from '@/components/custom/FullPageSpinner';
 import { SignInButton } from '@clerk/nextjs';
 import { useConvexAuth } from 'convex/react';
 import { redirect } from 'next/navigation';
+import { FullPageSpinner } from '@/components/custom/FullPageSpinner';
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useConvexAuth();

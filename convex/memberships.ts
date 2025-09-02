@@ -99,7 +99,7 @@ export const removeMember = mutation({
       .collect();
 
     for (const seat of seatings) {
-      const { userId, ...rest } = seat;
+      const { ...rest } = seat;
       await ctx.db.replace(seat._id, rest);
     }
 

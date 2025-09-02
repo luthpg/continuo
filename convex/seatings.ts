@@ -81,7 +81,7 @@ export const unassignMemberFromSeat = mutation({
 
     const seat = await ctx.db.get(args.seatingId);
     if (seat && 'userId' in seat) {
-      const { userId, ...rest } = seat;
+      const { ...rest } = seat;
       await ctx.db.replace(args.seatingId, rest);
     }
   },

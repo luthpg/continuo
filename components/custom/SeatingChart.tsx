@@ -27,7 +27,6 @@ type SeatingChartProps = {
   initialSeatingChart: TSeating[];
   initialMembers: TMember[];
   parts: TPart[];
-  concertId: Id<'concerts'>;
   organizationId: Id<'organizations'>;
 };
 
@@ -35,7 +34,6 @@ export function SeatingChart({
   initialSeatingChart,
   initialMembers,
   parts,
-  concertId,
   organizationId,
 }: SeatingChartProps) {
   const isMobile = useIsMobile();

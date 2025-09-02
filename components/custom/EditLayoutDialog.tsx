@@ -60,7 +60,11 @@ export function EditLayoutDialog({
     setLayout(layout.filter((row) => row.id !== id));
   };
 
-  const updateRow = (id: number, field: 'partId' | 'count', value: any) => {
+  const updateRow = (
+    id: number,
+    field: 'partId' | 'count',
+    value: string | number,
+  ) => {
     setLayout(
       layout.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     );

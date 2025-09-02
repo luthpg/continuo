@@ -43,5 +43,13 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["convex/_generated/*"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
 }

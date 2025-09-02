@@ -4,7 +4,7 @@ import type { Doc } from '@/convex/_generated/dataModel';
 
 // getSeatingChartByConcertクエリの返り値の型
 export type TSeating = NonNullable<
-  ReturnType<typeof useQuery<typeof api.seatings.getSeatingChartByConcert>>
+  ReturnType<typeof useQuery<typeof api.seatings.getSeatingChart>>
 >[number];
 
 // partsテーブルのドキュメントの型
