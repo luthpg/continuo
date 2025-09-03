@@ -24,16 +24,19 @@ import {
 } from '@/components/ui/select';
 import { api } from '@/convex/_generated/api';
 import type { Doc } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 
 export default function SelectOrgPage() {
   const router = useRouter();
+  const { setActiveOrgId } = useConcertStore();
   const organizations = useQuery(api.organizations.getForUser);
   const createOrganization = useMutation(api.organizations.create);
   const [newOrgName, setNewOrgName] = useState('');
 
   const handleSelectOrg = (orgId: string) => {
-    if (orgId) {
-      router.push(`/hall/calendar?organizationId=${orgId}`);
+    if (orgId && orgId !== '') {
+      setActiveOrgId(orgId);
+      router.push(`/hall/calendar`);
     }
   };
 
@@ -42,7 +45,8 @@ export default function SelectOrgPage() {
     toast.promise(createOrganization({ name: newOrgName }), {
       loading: '団体を作成中...',
       success: (newOrgId) => {
-        router.push(`/hall/calendar?organizationId=${newOrgId}`);
+        setActiveOrgId(newOrgId);
+        router.push(`/hall/calendar`);
         return '団体を作成しました';
       },
       error: '作成に失敗しました',

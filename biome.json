@@ -13,6 +13,7 @@
       "convex/**/*",
       "hooks/**/*",
       "lib/**/*",
+      "stores/**/*",
       "tests/**/*",
       "types/**/*",
       "./*.ts",

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: 動的にスタイルを追加 */
 'use client';
 
 import * as React from 'react';

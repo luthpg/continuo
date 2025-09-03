@@ -88,6 +88,31 @@ export const updateUserProfile = mutation({
   },
 });
 
+export const updateUser = internalMutation({
+  args: {
+    clerkUserId: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, { clerkUserId, email, name, imageUrl }) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkUserId))
+      .first();
+
+    if (!user) {
+      throw new Error('ユーザーが見つかりませんでした。');
+    }
+
+    await ctx.db.patch(user._id, {
+      name: name,
+      email: email,
+      imageUrl: imageUrl,
+    });
+  },
+});
+
 export const deleteUserAndData = internalMutation({
   args: { clerkUserId: v.string() },
   handler: async (ctx, { clerkUserId }) => {
@@ -158,7 +183,44 @@ export const getMembersByConcert = query({
       throw new Error('Not authenticated');
     }
 
-    // ToDo: 権限チェック
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first();
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const concert = await ctx.db.get(args.concertId);
+    if (!concert) {
+      throw new Error('Concert not found');
+    }
+
+    // 1. 団体管理者 (admin/subAdmin) かどうかチェック
+    const orgMembership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', user._id).eq('organizationId', concert.organizationId),
+      )
+      .first();
+
+    const isOrgAdmin =
+      orgMembership && ['admin', 'subAdmin'].includes(orgMembership.role);
+
+    // 2. 演奏会のメンバーかどうかチェック
+    const concertMembership = await ctx.db
+      .query('concertMemberships')
+      .withIndex('by_user_concert', (q) =>
+        q.eq('userId', user._id).eq('concertId', args.concertId),
+      )
+      .first();
+
+    const isConcertMember = !!concertMembership;
+
+    // 団体管理者でも演奏会メンバーでもない場合はエラー
+    if (!isOrgAdmin && !isConcertMember) {
+      throw new Error('Not authorized');
+    }
 
     const concertMemberships = await ctx.db
       .query('concertMemberships')

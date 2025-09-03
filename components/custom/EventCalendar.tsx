@@ -76,6 +76,7 @@ export function EventCalendar({
           </div>
         ))}
         {blanks.map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: 静的な配列のためOK
           <div key={`blank-${i}`} />
         ))}
         {days.map((day) => (

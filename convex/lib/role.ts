@@ -38,10 +38,9 @@ export async function isValidRoleUser(
 
     if (
       !membership ||
-      requiredRoles == null ||
-      !requiredRoles.includes(membership.role)
+      (requiredRoles != null && !requiredRoles.includes(membership.role))
     ) {
-      console.error('Not authorized');
+      console.error('Not authorized for organization');
       return false;
     }
   }
@@ -57,10 +56,9 @@ export async function isValidRoleUser(
 
     if (
       !membership ||
-      requiredRoles == null ||
-      !requiredRoles.includes(membership.role)
+      (requiredRoles != null && !requiredRoles.includes(membership.role))
     ) {
-      console.error('Not authorized');
+      console.error('Not authorized for concert');
       return false;
     }
   }

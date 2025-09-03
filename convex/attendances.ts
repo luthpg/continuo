@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 // import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
+import { isValidRoleUser } from './lib/role';
 
 /**
  * 指定された演奏会に紐づく全ての出欠情報を取得するクエリ
@@ -11,6 +12,45 @@ export const getAttendancesByConcert = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error('Not authenticated');
+    }
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first();
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const concert = await ctx.db.get(args.concertId);
+    if (!concert) {
+      throw new Error('Concert not found');
+    }
+
+    // 1. 団体管理者 (admin/subAdmin) かどうかチェック
+    const orgMembership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', user._id).eq('organizationId', concert.organizationId),
+      )
+      .first();
+
+    const isOrgAdmin =
+      orgMembership && ['admin', 'subAdmin'].includes(orgMembership.role);
+
+    // 2. 演奏会のメンバーかどうかチェック
+    const concertMembership = await ctx.db
+      .query('concertMemberships')
+      .withIndex('by_user_concert', (q) =>
+        q.eq('userId', user._id).eq('concertId', args.concertId),
+      )
+      .first();
+
+    const isConcertMember = !!concertMembership;
+
+    // 団体管理者でも演奏会メンバーでもない場合はエラー
+    if (!isOrgAdmin && !isConcertMember) {
+      throw new Error('Not authorized');
     }
 
     // 演奏会に紐づくイベントを取得
@@ -62,6 +102,9 @@ export const updateAttendanceStatus = mutation({
       throw new Error('Not authenticated');
     }
 
+    const concert = await ctx.db.get(args.concertId);
+    if (!concert) throw new Error('Concert not found');
+
     const user = await ctx.db
       .query('users')
       .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
@@ -71,7 +114,15 @@ export const updateAttendanceStatus = mutation({
       throw new Error('User not found');
     }
 
-    // TODO: ログインユーザー本人、または管理者のみが更新できるように権限チェックを追加
+    const isSelf = user._id === args.userId;
+    const isAdmin = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: concert.organizationId,
+      requiredRoles: ['admin', 'subAdmin'],
+    });
+
+    if (!isSelf && !isAdmin) {
+      throw new Error('Not authorized to update this attendance.');
+    }
 
     // 既存の出欠情報を検索
     const existingAttendance = await ctx.db

@@ -10,31 +10,47 @@ export const getEventsByConcert = query({
     concertId: v.id('concerts'),
   },
   handler: async (ctx, args) => {
-    // 認証チェック: ユーザーがログインしているか確認
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error('Not authenticated');
     }
-    const clerkUserId = identity.subject;
 
     const user = await ctx.db
       .query('users')
-      .withIndex('by_clerk_id', (q) => q.eq('clerkId', clerkUserId))
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
       .first();
-
     if (!user) {
-      // ユーザーがConvexに存在しない場合エラー
       throw new Error('User not found');
     }
 
-    // このユーザーがこの演奏会の権限を持っているかチェック
-    const membership = await ctx.db
+    const concert = await ctx.db.get(args.concertId);
+    if (!concert) {
+      throw new Error('Concert not found');
+    }
+
+    // 1. 団体管理者 (admin/subAdmin) かどうかチェック
+    const orgMembership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', user._id).eq('organizationId', concert.organizationId),
+      )
+      .first();
+
+    const isOrgAdmin =
+      orgMembership && ['admin', 'subAdmin'].includes(orgMembership.role);
+
+    // 2. 演奏会のメンバーかどうかチェック
+    const concertMembership = await ctx.db
       .query('concertMemberships')
       .withIndex('by_user_concert', (q) =>
         q.eq('userId', user._id).eq('concertId', args.concertId),
       )
       .first();
-    if (!membership) {
+
+    const isConcertMember = !!concertMembership;
+
+    // 団体管理者でも演奏会メンバーでもない場合はエラー
+    if (!isOrgAdmin && !isConcertMember) {
       throw new Error('Not authorized');
     }
 

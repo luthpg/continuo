@@ -1,27 +1,22 @@
 'use client';
 
 import { useQuery } from 'convex/react';
-import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { AssetCard } from '@/components/custom/AssetCard';
 import { UploadAssetDialog } from '@/components/custom/UploadAssetDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 
 function AssetsPageContent() {
-  const searchParams = useSearchParams();
-  const concertId = searchParams.get('concertId') as Id<'concerts'> | null;
-  const organizationId = searchParams.get(
-    'organizationId',
-  ) as Id<'organizations'> | null;
+  const { activeOrgId, activeConcertId } = useConcertStore();
 
   const assets = useQuery(
     api.assets.getAssetsByConcert,
-    concertId ? { concertId } : 'skip',
+    activeConcertId ? { concertId: activeConcertId } : 'skip',
   );
 
-  const isLoading = concertId && assets === undefined;
+  const isLoading = activeConcertId && assets === undefined;
 
   return (
     <div className="flex-1 flex flex-col gap-6 p-4 md:p-6">
@@ -32,10 +27,10 @@ function AssetsPageContent() {
             楽譜や参考音源などのファイルを管理します。
           </p>
         </div>
-        {concertId && organizationId && (
+        {activeConcertId && activeOrgId && (
           <UploadAssetDialog
-            concertId={concertId}
-            organizationId={organizationId}
+            concertId={activeConcertId}
+            organizationId={activeOrgId}
           />
         )}
       </div>
@@ -43,12 +38,13 @@ function AssetsPageContent() {
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: 静的な配列のためOK
             <Skeleton key={i} className="h-40 rounded-lg" />
           ))}
         </div>
       )}
 
-      {concertId && assets && assets.length > 0 && (
+      {activeConcertId && assets && assets.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {assets.map((asset) => (
             <AssetCard key={asset._id} asset={asset} />
@@ -56,13 +52,15 @@ function AssetsPageContent() {
         </div>
       )}
 
-      {(!concertId || (assets && assets.length === 0)) && !isLoading && (
+      {(!activeConcertId || (assets && assets.length === 0)) && !isLoading && (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-14rem)] text-center text-muted-foreground bg-muted/50 rounded-lg">
           <p className="text-lg font-semibold">
-            {concertId ? 'アセットがありません' : '演奏会を選択してください'}
+            {activeConcertId
+              ? 'アセットがありません'
+              : '演奏会を選択してください'}
           </p>
           <p className="text-sm">
-            {concertId
+            {activeConcertId
               ? '右上の「＋ 新規アップロード」からファイルを追加できます。'
               : 'ヘッダーのドロップダウンから表示したい演奏会を選択してください。'}
           </p>
@@ -94,6 +92,7 @@ function PageSkeleton() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: 静的な配列のためOK
           <Skeleton key={i} className="h-40 rounded-lg" />
         ))}
       </div>

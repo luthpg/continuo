@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation } from 'convex/react';
-import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   Select,
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 import type { TMember } from '@/types/member';
 import type { TPart } from '@/types/seating';
 
@@ -21,19 +21,16 @@ type PartCellProps = {
 };
 
 export function PartCell({ member, parts }: PartCellProps) {
-  const searchParams = useSearchParams();
-  const organizationId = searchParams.get('organizationId') as
-    | Id<'organizations'>
-    | undefined;
+  const { activeOrgId } = useConcertStore();
 
   const updatePart = useMutation(api.partMemberships.updatePartMembership);
 
   const handlePartChange = (newPartId: Id<'parts'>) => {
-    if (!organizationId) return;
+    if (!activeOrgId) return;
 
     toast.promise(
       updatePart({
-        organizationId,
+        organizationId: activeOrgId,
         userId: member._id,
         partId: newPartId,
       }),

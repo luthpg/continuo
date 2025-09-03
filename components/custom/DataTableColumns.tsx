@@ -1,7 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { DataTableRowActions } from '@/components/custom/data-table-row-actions';
+import { DataTableRowActions } from '@/components/custom/DataTableRowActions';
 import { PartCell } from '@/components/custom/PartCell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';

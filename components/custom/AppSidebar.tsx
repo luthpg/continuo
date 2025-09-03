@@ -9,7 +9,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import type * as React from 'react';
 import {
   Sidebar,
@@ -20,52 +20,63 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import type { Id } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const organizationId = searchParams.get('organizationId') as
-    | Id<'organizations'>
-    | undefined;
+  const { activeOrgId } = useConcertStore();
 
-  const navMain = [
+  const navMain: Array<{
+    title: string;
+    url: string;
+    icon: React.ComponentType;
+    isActive: boolean;
+  }> = [
     {
       title: 'ホーム',
-      url: `/hall?organizationId=${organizationId}`,
+      url: `/hall`,
       icon: Home,
       isActive: pathname === '/hall' && !pathname.includes('/hall/'),
     },
-    {
-      title: '日程・出欠',
-      url: `/hall/calendar?organizationId=${organizationId}`,
-      icon: CalendarDays,
-      isActive: pathname.startsWith('/hall/calendar'),
-    },
-    {
-      title: 'メンバー',
-      url: `/hall/members?organizationId=${organizationId}`,
-      icon: Users,
-      isActive: pathname.startsWith('/hall/members'),
-    },
-    {
-      title: 'アセット',
-      url: `/hall/assets?organizationId=${organizationId}`,
-      icon: Music,
-      isActive: pathname.startsWith('/hall/assets'),
-    },
-    {
-      title: '席次表',
-      url: `/hall/seatings?organizationId=${organizationId}`,
-      icon: FileText,
-      isActive: pathname.startsWith('/hall/seatings'),
-    },
   ];
+  activeOrgId &&
+    navMain.push(
+      {
+        title: '日程・出欠',
+        url: `/hall/calendar`,
+        icon: CalendarDays,
+        isActive: pathname.startsWith('/hall/calendar'),
+      },
+      {
+        title: 'メンバー',
+        url: `/hall/members`,
+        icon: Users,
+        isActive: pathname.startsWith('/hall/members'),
+      },
+      {
+        title: 'アセット',
+        url: `/hall/assets`,
+        icon: Music,
+        isActive: pathname.startsWith('/hall/assets'),
+      },
+      {
+        title: '席次表',
+        url: `/hall/seatings`,
+        icon: FileText,
+        isActive: pathname.startsWith('/hall/seatings'),
+      },
+      {
+        title: '演奏会管理',
+        url: `/hall/concerts`,
+        icon: Music,
+        isActive: pathname.startsWith('/hall/concerts'),
+      },
+    );
 
   const navSecondary = [
     {
       title: '団体設定',
-      url: `/hall/settings?organizationId=${organizationId}`,
+      url: `/hall/settings`,
       icon: Settings,
       isActive: pathname.startsWith('/hall/settings'),
     },
@@ -80,7 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <Link href={`/hall?organizationId=${organizationId}`}>
+              <Link href={'/hall'}>
                 <Music className="!size-6" />
                 <span className="logo-style text-2xl font-semibold">
                   Continuo.
@@ -110,24 +121,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="mt-auto">
-        <SidebarMenu>
-          {navSecondary.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                isActive={item.isActive}
-                tooltip={item.title}
-              >
-                <Link href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarFooter>
+      {activeOrgId && (
+        <SidebarFooter className="mt-auto">
+          <SidebarMenu>
+            {navSecondary.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={item.isActive}
+                  tooltip={item.title}
+                >
+                  <Link href={item.url}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }

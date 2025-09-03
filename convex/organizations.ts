@@ -96,18 +96,27 @@ export const get = query({
   },
 });
 
-// Clerkのorganization IDを基にConvexのorganization情報を取得
-export const getOrganizationByClerkId = query({
+export const update = mutation({
   args: {
-    clerkOrgId: v.string(),
+    id: v.id('organizations'),
+    name: v.string(),
   },
   handler: async (ctx, args) => {
-    // Clerk IDはorganizationsテーブルの_idとして保存されていると仮定
-    const organization = await ctx.db
-      .query('organizations')
-      .filter((q) => q.eq(q.field('_id'), args.clerkOrgId))
-      .first();
-    return organization;
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: args.id,
+      requiredRoles: ['admin'],
+    });
+
+    if (!isAuthed) {
+      throw new Error('Only admins can update the organization.');
+    }
+
+    await ctx.db.patch(args.id, { name: args.name });
   },
 });
 
@@ -118,7 +127,9 @@ export const getMembersByOrganization = query({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error('Not authenticated');
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
 
     const isAuthed = await isValidRoleUser(ctx, identity.subject, {
       organizationId: args.organizationId,

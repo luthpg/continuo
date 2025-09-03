@@ -2,7 +2,7 @@
 
 import type { Table } from '@tanstack/react-table';
 import { X } from 'lucide-react';
-import { DataTableViewOptions } from '@/components/custom/data-table-view-options';
+import { DataTableViewOptions } from '@/components/custom/DataTableViewOptions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 

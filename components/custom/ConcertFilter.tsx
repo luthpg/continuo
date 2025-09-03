@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from 'convex/react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -11,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 
 export function ConcertFilter({
   organizationId,
@@ -19,18 +19,13 @@ export function ConcertFilter({
   organizationId: Id<'organizations'>;
   currentConcertId: string | null;
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const concerts = useQuery(api.concerts.getConcertsByOrganization, {
     organizationId,
   });
+  const { setActiveConcertId } = useConcertStore();
 
   const handleValueChange = (concertId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('concertId', concertId);
-    // ページパスを動的に取得してリダイレクト
-    const currentPath = window.location.pathname;
-    router.push(`${currentPath}?${params.toString()}`);
+    setActiveConcertId(concertId);
   };
 
   if (!concerts) {

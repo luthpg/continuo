@@ -60,7 +60,9 @@ export default defineSchema({
   programMemberships: defineTable({
     userId: v.id('users'),
     programId: v.id('programs'),
-  }).index('by_user_program', ['userId', 'programId']),
+  })
+    .index('by_user_program', ['userId', 'programId'])
+    .index('by_program', ['programId']),
 
   events: defineTable({
     organizationId: v.id('organizations'),
@@ -98,7 +100,8 @@ export default defineSchema({
     updatedBy: v.id('users'),
   })
     .index('by_event_user', ['eventId', 'userId'])
-    .index('by_user', ['userId']),
+    .index('by_user', ['userId'])
+    .index('by_event', ['eventId']),
 
   assets: defineTable({
     storageId: v.id('_storage'),

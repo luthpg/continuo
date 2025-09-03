@@ -2,10 +2,9 @@
 
 import { OrganizationProfile } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
-import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { DataTable } from '@/components/custom/data-table';
-import { getColumns } from '@/components/custom/data-table-columns';
+import { DataTable } from '@/components/custom/DataTable';
+import { getColumns } from '@/components/custom/DataTableColumns';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,21 +15,18 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 
 function MembersPageContent() {
-  const searchParams = useSearchParams();
-  const organizationId = searchParams.get('organizationId') as
-    | Id<'organizations'>
-    | undefined;
+  const { activeOrgId } = useConcertStore();
 
   const members = useQuery(
     api.organizations.getMembersByOrganization,
-    organizationId ? { organizationId } : 'skip',
+    activeOrgId ? { organizationId: activeOrgId } : 'skip',
   );
   const parts = useQuery(
     api.parts.getPartsByOrganization,
-    organizationId ? { organizationId } : 'skip',
+    activeOrgId ? { organizationId: activeOrgId } : 'skip',
   );
 
   return (

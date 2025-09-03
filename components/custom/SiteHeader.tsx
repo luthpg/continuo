@@ -2,7 +2,6 @@
 
 import { UserButton } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { ConcertFilter } from '@/components/custom/ConcertFilter';
 import {
@@ -16,20 +15,19 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
-import type { Doc, Id } from '@/convex/_generated/dataModel';
+import type { Doc } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 
 function HeaderContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const organizationId = searchParams.get('organizationId') as
-    | Id<'organizations'>
-    | undefined;
-  const concertId = searchParams.get('concertId');
+  const { activeOrgId, activeConcertId, setActiveOrgId } = useConcertStore();
 
   const organizations = useQuery(api.organizations.getForUser);
 
   const handleOrgChange = (newOrgId: string) => {
-    router.push(`/hall/calendar?organizationId=${newOrgId}`);
+    newOrgId &&
+      newOrgId !== '' &&
+      newOrgId !== activeOrgId &&
+      setActiveOrgId(newOrgId);
   };
 
   return (
@@ -49,7 +47,7 @@ function HeaderContent() {
 
       <div className="w-full flex flex-col md:flex-row md:items-center gap-2">
         {organizations ? (
-          <Select value={organizationId} onValueChange={handleOrgChange}>
+          <Select value={activeOrgId ?? ''} onValueChange={handleOrgChange}>
             <SelectTrigger className="w-full md:w-[240px]">
               <SelectValue placeholder="団体を選択..." />
             </SelectTrigger>
@@ -67,10 +65,10 @@ function HeaderContent() {
           <Skeleton className="h-10 w-full md:w-[240px]" />
         )}
 
-        {organizationId && (
+        {activeOrgId && (
           <ConcertFilter
-            organizationId={organizationId}
-            currentConcertId={concertId}
+            organizationId={activeOrgId}
+            currentConcertId={activeConcertId}
           />
         )}
       </div>

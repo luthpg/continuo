@@ -16,7 +16,12 @@ export const getSeatingChart = query({
     if (!identity) {
       throw new Error('Not authenticated');
     }
-    // TODO: 権限チェックを追加
+
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      concertId: args.concertId,
+      requiredRoles: ['admin', 'subAdmin', 'member'],
+    });
+    if (!isAuthed) throw new Error('Not authorized');
 
     const seatings = await ctx.db
       .query('seatings')

@@ -1,13 +1,14 @@
 'use client';
 
 import { useConvexAuth } from 'convex/react';
-import { redirect, usePathname, useSearchParams } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import { Suspense } from 'react';
-import { AppSidebar } from '@/components/custom/app-sidebar';
+import { AppSidebar } from '@/components/custom/AppSidebar';
 import { DynamicTheme } from '@/components/custom/DynamicTheme';
 import { FullPageSpinner } from '@/components/custom/FullPageSpinner';
-import { SiteHeader } from '@/components/custom/site-header';
+import { SiteHeader } from '@/components/custom/SiteHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { useConcertStore } from '@/stores/concert';
 
 function HallLayoutContent({
   children,
@@ -17,16 +18,10 @@ function HallLayoutContent({
   // アクセスしているページのパスを取得
   const path = usePathname();
 
-  const searchParams = useSearchParams();
-  const organizationId = searchParams.get('organizationId');
+  const { activeOrgId } = useConcertStore();
 
   // organizationIdがURLにない場合、選択ページにリダイレクト
-  if (
-    (organizationId == null ||
-      organizationId === 'null' ||
-      organizationId === '') &&
-    path !== '/hall/select-org'
-  ) {
+  if (activeOrgId == null && path !== '/hall/select-org') {
     return redirect('/hall/select-org');
   }
 
@@ -40,7 +35,7 @@ function HallLayoutContent({
         } as React.CSSProperties
       }
     >
-      {organizationId && <DynamicTheme organizationId={organizationId} />}
+      {activeOrgId && <DynamicTheme organizationId={activeOrgId} />}
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />

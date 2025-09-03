@@ -2,7 +2,6 @@
 
 import { useMutation } from 'convex/react';
 import { MoreHorizontal } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import { useConcertStore } from '@/stores/concert';
 import type { TMember } from '@/types/member';
 
 interface DataTableRowActionsProps {
@@ -27,10 +26,7 @@ interface DataTableRowActionsProps {
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
-  const searchParams = useSearchParams();
-  const organizationId = searchParams.get('organizationId') as
-    | Id<'organizations'>
-    | undefined;
+  const { activeOrgId } = useConcertStore();
 
   const member = row.original;
   const [currentRole, setCurrentRole] = useState(member.role);
@@ -39,12 +35,12 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const removeMember = useMutation(api.memberships.removeMember);
 
   const handleRoleChange = (newRole: 'admin' | 'subAdmin' | 'member') => {
-    if (!organizationId) return;
+    if (!activeOrgId) return;
 
     setCurrentRole(newRole);
     toast.promise(
       updateRole({
-        organizationId,
+        organizationId: activeOrgId,
         targetUserId: member._id,
         newRole,
       }),
@@ -57,11 +53,11 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   };
 
   const handleRemoveMember = () => {
-    if (!organizationId) return;
+    if (!activeOrgId) return;
 
     toast.promise(
       removeMember({
-        organizationId,
+        organizationId: activeOrgId,
         targetUserId: member._id,
       }),
       {
