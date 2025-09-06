@@ -1,7 +1,8 @@
 import { v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { isValidRoleUser } from './lib/role';
+import { generateShortId } from './lib/utils';
 
 /**
  * 新しい団体を作成するミューテーション
@@ -25,10 +26,22 @@ export const create = mutation({
       throw new Error('User not found');
     }
 
+    // ユニークな招待コードを生成
+    let inviteCode: string;
+    let existingOrg;
+    do {
+      inviteCode = generateShortId();
+      existingOrg = await ctx.db
+        .query('organizations')
+        .withIndex('by_invite_code', (q) => q.eq('inviteCode', inviteCode))
+        .first();
+    } while (existingOrg);
+
     // 団体を作成
     const organizationId = await ctx.db.insert('organizations', {
       name: args.name,
       ownerId: user._id,
+      inviteCode,
     });
 
     // 作成者を管理者としてメンバーシップに追加
@@ -59,16 +72,33 @@ export const getForUser = query({
       return [];
     }
 
-    const memberships = await ctx.db
+    const userMemberships = await ctx.db
       .query('memberships')
       .withIndex('by_user', (q) => q.eq('userId', user._id))
       .collect();
 
-    const organizations = await Promise.all(
-      memberships.map((m) => ctx.db.get(m.organizationId)),
+    const organizationsWithMemberCount = await Promise.all(
+      userMemberships.map(async (membership) => {
+        const organization = await ctx.db.get(membership.organizationId);
+        if (!organization) {
+          return null;
+        }
+
+        const orgMemberships = await ctx.db
+          .query('memberships')
+          .withIndex('by_organization', (q) =>
+            q.eq('organizationId', organization._id),
+          )
+          .collect();
+
+        return {
+          ...organization,
+          memberCount: orgMemberships.length,
+        };
+      }),
     );
 
-    return organizations.filter(Boolean); // nullを除外
+    return organizationsWithMemberCount.filter(Boolean); // nullを除外
   },
 });
 
@@ -99,7 +129,10 @@ export const get = query({
 export const update = mutation({
   args: {
     id: v.id('organizations'),
-    name: v.string(),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    websiteUrl: v.optional(v.string()),
+    practiceLocation: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -116,11 +149,12 @@ export const update = mutation({
       throw new Error('Only admins can update the organization.');
     }
 
-    await ctx.db.patch(args.id, { name: args.name });
+    const { id, ...rest } = args;
+    await ctx.db.patch(id, rest);
   },
 });
 
-// 指定された団体に所属するメンバー一覧を取得するクエリ (パート情報JOIN)
+// 指定された団体に所属するメンバー一覧を取得するクエリ (パート情報 & 役職情報 JOIN)
 export const getMembersByOrganization = query({
   args: {
     organizationId: v.id('organizations'),
@@ -155,41 +189,36 @@ export const getMembersByOrganization = query({
           .withIndex('by_user', (q) => q.eq('userId', user._id))
           .first();
 
-        let partName = '未設定';
-        let partId = null;
-        if (partMembership) {
-          const partDoc = await ctx.db.get(partMembership.partId);
-          if (partDoc) {
-            partName = partDoc.name;
-            partId = partDoc._id;
-          }
-        }
+        const part = partMembership
+          ? await ctx.db.get(partMembership.partId)
+          : null;
+
+        // 役職情報を取得
+        const positionAssignments = await ctx.db
+          .query('positionAssignments')
+          .withIndex('by_user_org', (q) =>
+            q.eq('userId', user._id).eq('organizationId', args.organizationId),
+          )
+          .collect();
+
+        const positions = await Promise.all(
+          positionAssignments.map((a) => ctx.db.get(a.positionId)),
+        );
 
         return {
           _id: user._id,
+          clerkId: user.clerkId,
           name: user.name ?? 'No Name',
           email: user.email ?? '',
           imageUrl: user.imageUrl,
           role: membership.role,
-          part: partName,
-          partId: partId,
+          part: part,
+          positions: positions.filter((p): p is Doc<'positions'> => p !== null),
         };
       }),
     );
 
-    return members.filter(
-      (
-        member,
-      ): member is {
-        _id: Id<'users'>;
-        name: string;
-        email: string;
-        imageUrl: string;
-        role: 'admin' | 'subAdmin' | 'member';
-        part: string;
-        partId: Id<'parts'> | null;
-      } => member !== null,
-    );
+    return members.filter((member) => member !== null);
   },
 });
 

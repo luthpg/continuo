@@ -7,14 +7,17 @@ import type { TMemberListMember } from '@/types/seating';
 type DraggableMemberProps = {
   member: TMemberListMember;
   isDragging?: boolean;
+  isDraggable?: boolean;
 };
 
 export function DraggableMember({
   member,
   isDragging = false,
+  isDraggable = true,
 }: DraggableMemberProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: member._id,
+    disabled: !isDraggable,
   });
 
   const style = transform

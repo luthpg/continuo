@@ -4,6 +4,7 @@ import { useMutation } from 'convex/react';
 import { MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AssignPositionDialog } from '@/components/custom/AssignPositionDialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -80,6 +81,12 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
+        <AssignPositionDialog member={member}>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            役職を割り当て
+          </DropdownMenuItem>
+        </AssignPositionDialog>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>役割の変更</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={currentRole}

@@ -2,38 +2,39 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { isValidRoleUser } from './lib/role';
 
-/**
- * 指定された団体に紐づく全てのパート情報を取得するクエリ
- */
-export const getPartsByOrganization = query({
+// Get positions by organization
+export const getPositionsByOrganization = query({
   args: {
     organizationId: v.id('organizations'),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error('Not authenticated');
-
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
     const isAuthed = await isValidRoleUser(ctx, identity.subject, {
       organizationId: args.organizationId,
       requiredRoles: ['admin', 'subAdmin', 'member'],
     });
-    if (!isAuthed) throw new Error('Not authorized');
-
-    const parts = await ctx.db
-      .query('parts')
+    if (!isAuthed) {
+      throw new Error('Not authorized');
+    }
+    return await ctx.db
+      .query('positions')
       .withIndex('by_organization', (q) =>
         q.eq('organizationId', args.organizationId),
       )
+      .order('asc')
       .collect();
-    return parts;
   },
 });
 
+// Create a new position
 export const create = mutation({
   args: {
     organizationId: v.id('organizations'),
     name: v.string(),
-    maxCounts: v.optional(v.number()),
+    description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -45,30 +46,30 @@ export const create = mutation({
     });
     if (!isAuthed) throw new Error('Not authorized');
 
-    const partId = await ctx.db.insert('parts', {
+    return await ctx.db.insert('positions', {
       organizationId: args.organizationId,
       name: args.name,
-      maxCounts: args.maxCounts,
+      description: args.description,
     });
-    return partId;
   },
 });
 
+// Update a position
 export const update = mutation({
   args: {
-    id: v.id('parts'),
+    id: v.id('positions'),
     name: v.optional(v.string()),
-    maxCounts: v.optional(v.number()),
+    description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Not authenticated');
 
-    const part = await ctx.db.get(args.id);
-    if (!part) throw new Error('Part not found');
+    const position = await ctx.db.get(args.id);
+    if (!position) throw new Error('Position not found');
 
     const isAuthed = await isValidRoleUser(ctx, identity.subject, {
-      organizationId: part.organizationId,
+      organizationId: position.organizationId,
       requiredRoles: ['admin', 'subAdmin'],
     });
     if (!isAuthed) throw new Error('Not authorized');
@@ -78,32 +79,32 @@ export const update = mutation({
   },
 });
 
+// Remove a position
 export const remove = mutation({
-  args: { id: v.id('parts') },
+  args: { id: v.id('positions') },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Not authenticated');
 
-    const part = await ctx.db.get(args.id);
-    if (!part) throw new Error('Part not found');
+    const position = await ctx.db.get(args.id);
+    if (!position) throw new Error('Position not found');
 
     const isAuthed = await isValidRoleUser(ctx, identity.subject, {
-      organizationId: part.organizationId,
+      organizationId: position.organizationId,
       requiredRoles: ['admin', 'subAdmin'],
     });
     if (!isAuthed) throw new Error('Not authorized');
 
-    // 関連する partMemberships を削除
-    const memberships = await ctx.db
-      .query('partMemberships')
-      .withIndex('by_part', (q) => q.eq('partId', args.id))
+    // Also remove related assignments
+    const assignments = await ctx.db
+      .query('positionAssignments')
+      .withIndex('by_position', (q) => q.eq('positionId', args.id))
       .collect();
 
-    for (const membership of memberships) {
-      await ctx.db.delete(membership._id);
+    for (const assignment of assignments) {
+      await ctx.db.delete(assignment._id);
     }
 
-    // パートを削除
     await ctx.db.delete(args.id);
   },
 });

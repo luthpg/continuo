@@ -1,9 +1,13 @@
 import { Seat } from '@/components/custom/Seat';
+import type { Id } from '@/convex/_generated/dataModel';
 import type { TPart, TSeating } from '@/types/seating';
 
 type OrchestraLayoutProps = {
   seatingChart: TSeating[];
   parts: TPart[];
+  isSwapMode?: boolean;
+  onSeatClick?: (seatId: Id<'seatings'>) => void;
+  firstSeatToSwap?: Id<'seatings'> | null;
 };
 
 const sections = {
@@ -14,7 +18,13 @@ const sections = {
   Others: ['Piano', 'Harp', 'Other'],
 };
 
-export function OrchestraLayout({ seatingChart, parts }: OrchestraLayoutProps) {
+export function OrchestraLayout({
+  seatingChart,
+  parts,
+  isSwapMode,
+  onSeatClick,
+  firstSeatToSwap,
+}: OrchestraLayoutProps) {
   const renderSection = (sectionName: keyof typeof sections) => {
     const sectionParts = parts.filter((p) =>
       sections[sectionName].includes(p.name),
@@ -36,7 +46,13 @@ export function OrchestraLayout({ seatingChart, parts }: OrchestraLayoutProps) {
                   .filter((seat) => seat.partId === part._id)
                   .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
                   .map((seat) => (
-                    <Seat key={seat._id} seat={seat} />
+                    <Seat
+                      key={seat._id}
+                      seat={seat}
+                      isSwapMode={isSwapMode}
+                      onClick={onSeatClick}
+                      isSelected={seat._id === firstSeatToSwap}
+                    />
                   ))}
               </div>
             </div>

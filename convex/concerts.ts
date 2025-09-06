@@ -89,7 +89,10 @@ export const create = mutation({
       throw new Error('Not authorized to create a concert');
     }
 
-    const concertId = await ctx.db.insert('concerts', { ...args });
+    const concertId = await ctx.db.insert('concerts', {
+      ...args,
+      status: 'planning',
+    });
     return concertId;
   },
 });
@@ -103,6 +106,13 @@ export const update = mutation({
     openTime: v.optional(v.string()),
     startTime: v.optional(v.string()),
     description: v.optional(v.string()),
+    status: v.optional(
+      v.union(
+        v.literal('planning'),
+        v.literal('recruiting'),
+        v.literal('finished'),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -224,5 +234,66 @@ export const remove = mutation({
 
     // 最後に演奏会自体を削除
     await ctx.db.delete(concertId);
+  },
+});
+
+/**
+ * 指定されたIDの演奏会の詳細情報を取得するクエリ
+ * プログラム一覧と参加メンバー一覧も含む
+ */
+export const getDetails = query({
+  args: { id: v.id('concerts') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+
+    // 1. 演奏会情報を取得
+    const concert = await ctx.db.get(args.id);
+    if (!concert) {
+      return null;
+    }
+
+    // 2. 権限チェック
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: concert.organizationId,
+      requiredRoles: ['admin', 'subAdmin', 'member'],
+    });
+
+    if (!isAuthed) {
+      throw new Error('Not authorized to view this concert');
+    }
+
+    // 3. プログラム一覧を取得 (orderIndexでソート)
+    const programs = await ctx.db
+      .query('programs')
+      .withIndex('by_concert', (q) => q.eq('concertId', args.id))
+      .order('asc')
+      .collect();
+
+    // 4. 参加メンバー一覧を取得
+    const concertMemberships = await ctx.db
+      .query('concertMemberships')
+      .withIndex('by_concert', (q) => q.eq('concertId', args.id))
+      .collect();
+
+    const members = await Promise.all(
+      concertMemberships.map(async (membership) => {
+        const user = await ctx.db.get(membership.userId);
+        return {
+          ...user,
+          concertMembershipId: membership._id, // ID を追加
+          concertRole: membership.role,
+        };
+      }),
+    );
+
+    // 5. 結果を結合して返す
+    return {
+      ...concert,
+      programs,
+      members,
+    };
   },
 });

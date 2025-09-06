@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import type { Doc, Id } from './_generated/dataModel';
 import { internalMutation, mutation, query } from './_generated/server';
+import { isValidRoleUser } from './lib/role';
 
 /**
  * 現在認証されているユーザーのConvexユーザー情報を取得するクエリ。
@@ -63,8 +64,9 @@ export const updateUserProfile = mutation({
     name: v.optional(v.string()),
     email: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
+    bio: v.optional(v.string()),
   },
-  handler: async (ctx, { name, email, imageUrl }) => {
+  handler: async (ctx, { name, email, imageUrl, bio }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error('認証されていません。');
@@ -84,6 +86,7 @@ export const updateUserProfile = mutation({
       name: name,
       email: email,
       imageUrl: imageUrl,
+      bio: bio,
     });
   },
 });
@@ -262,5 +265,90 @@ export const getMembersByConcert = query({
     );
 
     return members;
+  },
+});
+
+export const getMemberDetails = query({
+  args: {
+    userId: v.id('users'),
+    organizationId: v.id('organizations'),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    // 権限チェック: 同じ団体のメンバーなら誰でも見れる
+    const isMember = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: args.organizationId,
+      requiredRoles: ['admin', 'subAdmin', 'member'],
+    });
+    if (!isMember) return null;
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) return null;
+
+    const membership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', args.userId).eq('organizationId', args.organizationId),
+      )
+      .first();
+
+    const partMembership = await ctx.db
+      .query('partMemberships')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .first();
+
+    let part = null;
+    if (partMembership) {
+      part = await ctx.db.get(partMembership.partId);
+    }
+
+    // 役職情報を取得
+    const positionAssignments = await ctx.db
+      .query('positionAssignments')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', args.userId).eq('organizationId', args.organizationId),
+      )
+      .collect();
+
+    const positions = await Promise.all(
+      positionAssignments.map((a) => ctx.db.get(a.positionId)),
+    );
+
+    return {
+      ...user,
+      role: membership?.role,
+      part: part,
+      positions: positions.filter((p): p is Doc<'positions'> => p !== null),
+    };
+  },
+});
+
+/**
+ * 指定された団体における現在のユーザーのロールを取得する
+ */
+export const getCurrentUserRole = query({
+  args: {
+    organizationId: v.id('organizations'),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first();
+    if (!user) return null;
+
+    const membership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', user._id).eq('organizationId', args.organizationId),
+      )
+      .first();
+
+    return membership?.role ?? null;
   },
 });

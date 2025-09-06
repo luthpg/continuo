@@ -7,14 +7,20 @@ export default defineSchema({
     email: v.optional(v.string()),
     name: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
+    bio: v.optional(v.string()),
   }).index('by_clerk_id', ['clerkId']),
 
   organizations: defineTable({
     name: v.string(),
     ownerId: v.id('users'), // 団体の所有者を追加
     description: v.optional(v.string()),
+    inviteCode: v.optional(v.string()),
     themeColor: v.optional(v.string()),
-  }).index('by_ownerId', ['ownerId']),
+    websiteUrl: v.optional(v.string()),
+    practiceLocation: v.optional(v.string()),
+  })
+    .index('by_ownerId', ['ownerId'])
+    .index('by_invite_code', ['inviteCode']),
 
   memberships: defineTable({
     userId: v.id('users'),
@@ -37,6 +43,13 @@ export default defineSchema({
     openTime: v.optional(v.string()),
     startTime: v.optional(v.string()),
     description: v.optional(v.string()),
+    status: v.optional(
+      v.union(
+        v.literal('planning'),
+        v.literal('recruiting'),
+        v.literal('finished'),
+      ),
+    ),
   }).index('by_organization', ['organizationId']),
 
   concertMemberships: defineTable({
@@ -55,7 +68,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     orderIndex: v.number(),
     orderName: v.optional(v.string()),
-  }).index('by_concert', ['concertId']),
+  }).index('by_concert', ['concertId', 'orderIndex']),
 
   programMemberships: defineTable({
     userId: v.id('users'),
@@ -139,5 +152,21 @@ export default defineSchema({
   partMemberships: defineTable({
     partId: v.id('parts'),
     userId: v.id('users'),
-  }).index('by_user', ['userId']),
+  })
+    .index('by_user', ['userId'])
+    .index('by_part', ['partId']),
+
+  positions: defineTable({
+    organizationId: v.id('organizations'),
+    name: v.string(),
+    description: v.optional(v.string()),
+  }).index('by_organization', ['organizationId']),
+
+  positionAssignments: defineTable({
+    userId: v.id('users'),
+    positionId: v.id('positions'),
+    organizationId: v.id('organizations'),
+  })
+    .index('by_user_org', ['userId', 'organizationId'])
+    .index('by_position', ['positionId']),
 });

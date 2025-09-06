@@ -31,7 +31,7 @@ function HeaderContent() {
   };
 
   return (
-    <header className="flex flex-col md:flex-row h-auto shrink-0 items-start md:items-center gap-2 border-b px-4 py-2 lg:px-6">
+    <header className="no-print flex flex-col md:flex-row h-auto shrink-0 items-start md:items-center gap-2 border-b px-4 py-2 lg:px-6">
       <div className="flex w-full items-center justify-between md:w-auto">
         <div className="flex items-center gap-1">
           <SidebarTrigger className="-ml-1" />

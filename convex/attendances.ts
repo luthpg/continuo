@@ -95,6 +95,8 @@ export const updateAttendanceStatus = mutation({
       v.literal('pending'),
     ),
     concertId: v.id('concerts'),
+    comment: v.optional(v.string()),
+    instead: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -124,6 +126,14 @@ export const updateAttendanceStatus = mutation({
       throw new Error('Not authorized to update this attendance.');
     }
 
+    const dataToUpdate = {
+      status: args.status,
+      comment: args.comment,
+      instead: args.instead,
+      updatedBy: user._id,
+      updatedDate: new Date().toISOString(),
+    };
+
     // 既存の出欠情報を検索
     const existingAttendance = await ctx.db
       .query('attendances')
@@ -134,19 +144,13 @@ export const updateAttendanceStatus = mutation({
 
     if (existingAttendance) {
       // 既存のデータがあれば更新 (patch)
-      await ctx.db.patch(existingAttendance._id, {
-        status: args.status,
-        updatedBy: user._id,
-        updatedDate: new Date().toISOString(),
-      });
+      await ctx.db.patch(existingAttendance._id, dataToUpdate);
     } else {
       // 既存のデータがなければ新規作成 (insert)
       await ctx.db.insert('attendances', {
         userId: args.userId,
         eventId: args.eventId,
-        status: args.status,
-        updatedBy: user._id,
-        updatedDate: new Date().toISOString(),
+        ...dataToUpdate,
       });
     }
   },

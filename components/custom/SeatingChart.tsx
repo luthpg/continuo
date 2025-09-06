@@ -11,11 +11,13 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { useMutation } from 'convex/react';
+import { ArrowLeftRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { DraggableMember } from '@/components/custom/DraggableMember';
 import { MemberList } from '@/components/custom/MemberList';
 import { OrchestraLayout } from '@/components/custom/OrchestraLayout';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -44,9 +46,14 @@ export function SeatingChart({
   const [activeMember, setActiveMember] = useState<TMemberListMember | null>(
     null,
   );
+  const [isSwapMode, setIsSwapMode] = useState(false);
+  const [firstSeatToSwap, setFirstSeatToSwap] = useState<Id<'seatings'> | null>(
+    null,
+  );
 
   const assignMember = useMutation(api.seatings.assignMemberToSeat);
   const unassignMember = useMutation(api.seatings.unassignMemberFromSeat);
+  const swapSeats = useMutation(api.seatings.swapSeats);
 
   useEffect(() => {
     const assignedMemberIds = new Set(
@@ -119,6 +126,34 @@ export function SeatingChart({
     toast.success(`${activeMember?.name}を配置しました。`);
   };
 
+  const handleSeatClick = (seatId: Id<'seatings'>) => {
+    if (!isSwapMode) return;
+
+    if (!firstSeatToSwap) {
+      setFirstSeatToSwap(seatId);
+      toast.info('入れ替える先の席を選択してください。');
+    } else {
+      if (firstSeatToSwap === seatId) {
+        // 同じ席をクリックしたら選択解除
+        setFirstSeatToSwap(null);
+        return;
+      }
+      toast.promise(
+        swapSeats({
+          seat1Id: firstSeatToSwap,
+          seat2Id: seatId,
+          organizationId,
+        }),
+        {
+          loading: '奏者を入れ替え中...',
+          success: '入れ替えました',
+          error: '入れ替えに失敗しました',
+        },
+      );
+      setFirstSeatToSwap(null);
+    }
+  };
+
   if (isMobile) {
     return (
       <DndContext
@@ -158,7 +193,26 @@ export function SeatingChart({
           <MemberList members={unassignedMembers} />
         </div>
         <div className="flex-1">
-          <OrchestraLayout seatingChart={seatingChart} parts={parts} />
+          <div className="flex justify-end mb-2">
+            <Button
+              variant={isSwapMode ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setIsSwapMode(!isSwapMode);
+                setFirstSeatToSwap(null); // モード切替時に選択解除
+              }}
+            >
+              <ArrowLeftRight className="h-4 w-4 mr-2" />
+              奏者入れ替えモード
+            </Button>
+          </div>
+          <OrchestraLayout
+            seatingChart={seatingChart}
+            parts={parts}
+            isSwapMode={isSwapMode}
+            onSeatClick={handleSeatClick}
+            firstSeatToSwap={firstSeatToSwap}
+          />
         </div>
       </div>
       <DragOverlay>

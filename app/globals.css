@@ -150,3 +150,27 @@
   font-weight: 400;
   font-style: normal;
 }
+
+@media print {
+  /* 印刷時に非表示にする要素 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 印刷用のレイアウト調整 */
+  body {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 席次管理ページ専用の印刷スタイル */
+  .printable-seating-chart {
+    width: 100%;
+    height: 100vh;
+    padding: 2rem;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+}

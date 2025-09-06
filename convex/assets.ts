@@ -65,6 +65,16 @@ export const createAsset = mutation({
 export const getAssetsByConcert = query({
   args: {
     concertId: v.id('concerts'),
+    search: v.optional(v.string()),
+    type: v.optional(
+      v.union(
+        v.literal('score'),
+        v.literal('recording'),
+        v.literal('photo'),
+        v.literal('text'),
+        v.literal('other'),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -86,11 +96,70 @@ export const getAssetsByConcert = query({
       throw new Error('Not authorized to view assets.');
     }
 
-    return await ctx.db
+    const assets = await ctx.db
       .query('assets')
       .withIndex('by_concert_asset', (q) => q.eq('concertId', args.concertId))
       .order('desc') // 新しいものが上にくるように降順でソート
       .collect();
+
+    let filteredAssets = assets;
+
+    if (args.search) {
+      const searchTerm = args.search.toLowerCase();
+      filteredAssets = filteredAssets.filter((asset) =>
+        asset.name.toLowerCase().includes(searchTerm),
+      );
+    }
+
+    if (args.type) {
+      filteredAssets = filteredAssets.filter(
+        (asset) => asset.type === args.type,
+      );
+    }
+
+    return filteredAssets;
+  },
+});
+
+/**
+ * アセット情報を更新するミューテーション
+ */
+export const updateAsset = mutation({
+  args: {
+    assetId: v.id('assets'),
+    name: v.optional(v.string()),
+    type: v.optional(
+      v.union(
+        v.literal('score'),
+        v.literal('recording'),
+        v.literal('photo'),
+        v.literal('text'),
+        v.literal('other'),
+      ),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+
+    const asset = await ctx.db.get(args.assetId);
+    if (!asset) {
+      throw new Error('Asset not found');
+    }
+
+    // 権限チェック：管理者または副管理者のみ更新可能
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: asset.organizationId,
+      requiredRoles: ['admin', 'subAdmin'],
+    });
+    if (!isAuthed) {
+      throw new Error('Not authorized to update assets.');
+    }
+
+    const { assetId, ...rest } = args;
+    await ctx.db.patch(assetId, rest);
   },
 });
 

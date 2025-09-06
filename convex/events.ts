@@ -1,11 +1,9 @@
 import { v } from 'convex/values';
-import type { DataModel } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { isValidRoleUser } from './lib/role';
 
 // 指定された演奏会IDに紐づくイベント一覧を取得する
 export const getEventsByConcert = query({
-  // フロントエンドから受け取る引数の型を定義
   args: {
     concertId: v.id('concerts'),
   },
@@ -15,46 +13,20 @@ export const getEventsByConcert = query({
       throw new Error('Not authenticated');
     }
 
-    const user = await ctx.db
-      .query('users')
-      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-      .first();
-    if (!user) {
-      throw new Error('User not found');
-    }
-
     const concert = await ctx.db.get(args.concertId);
     if (!concert) {
       throw new Error('Concert not found');
     }
 
-    // 1. 団体管理者 (admin/subAdmin) かどうかチェック
-    const orgMembership = await ctx.db
-      .query('memberships')
-      .withIndex('by_user_org', (q) =>
-        q.eq('userId', user._id).eq('organizationId', concert.organizationId),
-      )
-      .first();
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: concert.organizationId,
+      requiredRoles: ['admin', 'subAdmin', 'member'],
+    });
 
-    const isOrgAdmin =
-      orgMembership && ['admin', 'subAdmin'].includes(orgMembership.role);
-
-    // 2. 演奏会のメンバーかどうかチェック
-    const concertMembership = await ctx.db
-      .query('concertMemberships')
-      .withIndex('by_user_concert', (q) =>
-        q.eq('userId', user._id).eq('concertId', args.concertId),
-      )
-      .first();
-
-    const isConcertMember = !!concertMembership;
-
-    // 団体管理者でも演奏会メンバーでもない場合はエラー
-    if (!isOrgAdmin && !isConcertMember) {
+    if (!isAuthed) {
       throw new Error('Not authorized');
     }
 
-    // データベースからconcertIdに一致するイベントをインデックスを使って効率的に検索
     const events = await ctx.db
       .query('events')
       .withIndex('by_concert', (q) => q.eq('concertId', args.concertId))
@@ -64,52 +36,95 @@ export const getEventsByConcert = query({
   },
 });
 
-// 新しいイベントを作成する
-export const createEvent = mutation({
+export const create = mutation({
   args: {
     concertId: v.id('concerts'),
-    organizationId: v.id('organizations'),
     title: v.string(),
     startAt: v.string(),
     endAt: v.string(),
     conductor: v.optional(v.string()),
-    description: v.optional(v.string()),
-    place: v.optional(v.string()),
-    programs: v.optional(v.array(v.id('programs'))),
     type: v.optional(v.id('eventTypes')),
+    place: v.optional(v.string()),
+    description: v.optional(v.string()),
+    programs: v.optional(v.array(v.id('programs'))),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error('Not authenticated');
-    }
-    const clerkUserId = identity.subject;
+    if (!identity) throw new Error('Not authenticated');
 
-    const adminRoles: Array<
-      DataModel['concertMemberships']['document']['role']
-    > = ['admin'];
-    const isAuthed = await isValidRoleUser(ctx, clerkUserId, {
-      concertId: args.concertId,
-      requiredRoles: adminRoles,
+    const concert = await ctx.db.get(args.concertId);
+    if (!concert) throw new Error('Concert not found');
+
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: concert.organizationId,
+      requiredRoles: ['admin', 'subAdmin'],
     });
-    if (!isAuthed) {
-      throw Error('Not authorized');
-    }
+    if (!isAuthed) throw new Error('Not authorized');
 
-    // 新しいイベントをデータベースに挿入
     const eventId = await ctx.db.insert('events', {
-      concertId: args.concertId,
-      organizationId: args.organizationId,
-      title: args.title,
-      startAt: args.startAt,
-      endAt: args.endAt,
-      conductor: args.conductor,
-      description: args.description,
-      place: args.place,
-      programs: args.programs,
-      type: args.type,
+      ...args,
+      organizationId: concert.organizationId,
     });
-
     return eventId;
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id('events'),
+    title: v.optional(v.string()),
+    startAt: v.optional(v.string()),
+    endAt: v.optional(v.string()),
+    conductor: v.optional(v.string()),
+    type: v.optional(v.id('eventTypes')),
+    place: v.optional(v.string()),
+    description: v.optional(v.string()),
+    programs: v.optional(v.array(v.id('programs'))),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+
+    const event = await ctx.db.get(args.id);
+    if (!event) throw new Error('Event not found');
+
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: event.organizationId,
+      requiredRoles: ['admin', 'subAdmin'],
+    });
+    if (!isAuthed) throw new Error('Not authorized');
+
+    const { id, ...rest } = args;
+    await ctx.db.patch(id, rest);
+  },
+});
+
+export const remove = mutation({
+  args: { id: v.id('events') },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+
+    const event = await ctx.db.get(args.id);
+    if (!event) throw new Error('Event not found');
+
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: event.organizationId,
+      requiredRoles: ['admin', 'subAdmin'],
+    });
+    if (!isAuthed) throw new Error('Not authorized');
+
+    // 関連する attendances を削除
+    const attendances = await ctx.db
+      .query('attendances')
+      .withIndex('by_event', (q) => q.eq('eventId', args.id))
+      .collect();
+
+    for (const attendance of attendances) {
+      await ctx.db.delete(attendance._id);
+    }
+
+    // イベントを削除
+    await ctx.db.delete(args.id);
   },
 });

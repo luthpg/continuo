@@ -2,9 +2,12 @@
 
 import { OrganizationProfile } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
+import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { DataTable } from '@/components/custom/DataTable';
 import { getColumns } from '@/components/custom/DataTableColumns';
+import { PartManagementDialog } from '@/components/custom/PartManagementDialog';
+import { PositionManagementDialog } from '@/components/custom/PositionManagementDialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,6 +22,7 @@ import { useConcertStore } from '@/stores/concert';
 
 function MembersPageContent() {
   const { activeOrgId } = useConcertStore();
+  const router = useRouter();
 
   const members = useQuery(
     api.organizations.getMembersByOrganization,
@@ -29,6 +33,11 @@ function MembersPageContent() {
     activeOrgId ? { organizationId: activeOrgId } : 'skip',
   );
 
+  const handleRowClick = (row: (typeof members)[0]) => {
+    if (!row) return;
+    router.push(`/hall/members/${row._id}`);
+  };
+
   return (
     <div className="flex-1 flex flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
@@ -38,23 +47,32 @@ function MembersPageContent() {
             メンバーの招待、役割やパートの変更ができます。
           </p>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>メンバーを招待</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-            <DialogHeader>
-              <DialogTitle>団体設定</DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 overflow-y-auto">
-              <OrganizationProfile routing="path" path="/hall/settings" />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <PartManagementDialog />
+          <PositionManagementDialog />
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>メンバーを招待</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle>団体設定</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto">
+                <OrganizationProfile routing="path" path="/hall/settings" />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {members && parts ? (
-        <DataTable columns={getColumns(parts)} data={members} />
+        <DataTable
+          columns={getColumns(parts)}
+          data={members}
+          onRowClick={handleRowClick}
+          parts={parts}
+        />
       ) : (
         <Skeleton className="w-full h-[calc(100vh-14rem)] rounded-lg" />
       )}

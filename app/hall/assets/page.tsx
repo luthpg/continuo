@@ -1,19 +1,44 @@
 'use client';
 
 import { useQuery } from 'convex/react';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { AssetCard } from '@/components/custom/AssetCard';
 import { UploadAssetDialog } from '@/components/custom/UploadAssetDialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
 import { useConcertStore } from '@/stores/concert';
 
+const assetTypes = {
+  all: 'すべて',
+  score: '楽譜',
+  recording: '音源',
+  photo: '写真',
+  text: 'テキスト',
+  other: 'その他',
+} as const;
+
 function AssetsPageContent() {
   const { activeOrgId, activeConcertId } = useConcertStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<keyof typeof assetTypes>('all');
 
   const assets = useQuery(
     api.assets.getAssetsByConcert,
-    activeConcertId ? { concertId: activeConcertId } : 'skip',
+    activeConcertId
+      ? {
+          concertId: activeConcertId,
+          search: searchTerm,
+          type: filterType === 'all' ? undefined : filterType,
+        }
+      : 'skip',
   );
 
   const isLoading = activeConcertId && assets === undefined;
@@ -27,12 +52,37 @@ function AssetsPageContent() {
             楽譜や参考音源などのファイルを管理します。
           </p>
         </div>
-        {activeConcertId && activeOrgId && (
-          <UploadAssetDialog
-            concertId={activeConcertId}
-            organizationId={activeOrgId}
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="名前で検索..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-9 w-40 lg:w-64"
           />
-        )}
+          <Select
+            value={filterType}
+            onValueChange={(value) =>
+              setFilterType(value as keyof typeof assetTypes)
+            }
+          >
+            <SelectTrigger className="h-9 w-[120px]">
+              <SelectValue placeholder="種類" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(assetTypes).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {activeConcertId && activeOrgId && (
+            <UploadAssetDialog
+              concertId={activeConcertId}
+              organizationId={activeOrgId}
+            />
+          )}
+        </div>
       </div>
 
       {isLoading && (

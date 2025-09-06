@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { EditLayoutDialog } from '@/components/custom/EditLayoutDialog';
 import { FullPageSpinner } from '@/components/custom/FullPageSpinner';
 import { SeatingChart } from '@/components/custom/SeatingChart';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -60,7 +61,7 @@ export default function SeatingsPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6 h-full">
-      <div className="flex items-center justify-between">
+      <div className="no-print flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">席次管理</h1>
           <p className="text-sm text-muted-foreground">
@@ -91,9 +92,12 @@ export default function SeatingsPage() {
             parts={parts}
             programId={selectedProgramId}
           />
+          <Button variant="outline" onClick={() => window.print()}>
+            印刷
+          </Button>
         </div>
       </div>
-      <div className="flex-1">
+      <div className="printable-seating-chart flex-1">
         {seatingChart ? (
           <SeatingChart
             initialSeatingChart={seatingChart}

@@ -8,9 +8,11 @@ import {
   FileText,
   ImageIcon,
   MoreVertical,
+  Pencil,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AssetEditDialog } from '@/components/custom/AssetEditDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,6 +87,12 @@ export function AssetCard({ asset }: AssetCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <AssetEditDialog asset={asset}>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <Pencil className="mr-2 h-4 w-4" />
+                編集
+              </DropdownMenuItem>
+            </AssetEditDialog>
             <DropdownMenuItem asChild>
               <a href={asset.fileUrl} target="_blank" rel="noopener noreferrer">
                 <Download className="mr-2 h-4 w-4" />

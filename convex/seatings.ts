@@ -160,3 +160,37 @@ export const createOrUpdateLayout = mutation({
     }
   },
 });
+
+/**
+ * 2つの座席の奏者を入れ替えるミューテーション
+ */
+export const swapSeats = mutation({
+  args: {
+    seat1Id: v.id('seatings'),
+    seat2Id: v.id('seatings'),
+    organizationId: v.id('organizations'),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+    const isAuthed = await isValidRoleUser(ctx, identity.subject, {
+      organizationId: args.organizationId,
+      requiredRoles: ['admin', 'subAdmin'],
+    });
+    if (!isAuthed) throw new Error('Not authorized');
+
+    const seat1 = await ctx.db.get(args.seat1Id);
+    const seat2 = await ctx.db.get(args.seat2Id);
+
+    if (!seat1 || !seat2) {
+      throw new Error('One or both seats not found');
+    }
+
+    // ユーザーIDを入れ替える
+    const user1Id = seat1.userId;
+    const user2Id = seat2.userId;
+
+    await ctx.db.patch(args.seat1Id, { userId: user2Id });
+    await ctx.db.patch(args.seat2Id, { userId: user1Id });
+  },
+});

@@ -26,14 +26,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+import type { Doc } from '@/convex/_generated/dataModel';
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onRowClick?: (row: TData) => void;
+  parts?: Doc<'parts'>[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onRowClick,
+  parts,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -67,7 +73,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} />
+      <DataTableToolbar table={table} parts={parts} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -94,6 +100,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  onClick={() => onRowClick?.(row.original)}
+                  className={onRowClick ? 'cursor-pointer' : ''}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

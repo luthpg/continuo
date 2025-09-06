@@ -1,6 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { DataTableColumnHeader } from '@/components/custom/DataTableColumnHeader';
 import { DataTableRowActions } from '@/components/custom/DataTableRowActions';
 import { PartCell } from '@/components/custom/PartCell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,7 +41,9 @@ export const getColumns = (parts: Doc<'parts'>[]): ColumnDef<TMember>[] => [
   },
   {
     accessorKey: 'name',
-    header: '名前',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="名前" />
+    ),
     cell: ({ row }) => {
       const member = row.original;
       return (
@@ -59,15 +62,20 @@ export const getColumns = (parts: Doc<'parts'>[]): ColumnDef<TMember>[] => [
   },
   {
     accessorKey: 'part',
-    header: 'パート',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="パート" />
+    ),
     cell: ({ row }) => {
       const member = row.original;
       return <PartCell member={member} parts={parts} />;
     },
+    accessorFn: (row) => row.part?.name,
   },
   {
     accessorKey: 'role',
-    header: '役割',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="役割" />
+    ),
     cell: ({ row }) => {
       const role = row.original.role;
       const config = roleConfig[role];
@@ -76,6 +84,26 @@ export const getColumns = (parts: Doc<'parts'>[]): ColumnDef<TMember>[] => [
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
     },
+  },
+  {
+    accessorKey: 'positions',
+    header: '役職',
+    cell: ({ row }) => {
+      const positions = row.original.positions;
+      if (!positions || positions.length === 0) {
+        return '-';
+      }
+      return (
+        <div className="flex flex-wrap gap-1">
+          {positions.map((position) => (
+            <Badge key={position._id} variant="outline">
+              {position.name}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
+    enableSorting: false,
   },
   {
     id: 'actions',

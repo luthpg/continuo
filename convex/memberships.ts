@@ -123,3 +123,57 @@ export const removeMember = mutation({
     }
   },
 });
+
+/**
+ * 招待コードを使って団体に参加するミューテーション
+ */
+export const joinWithInviteCode = mutation({
+  args: {
+    inviteCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // 招待コードで団体を検索
+    const organization = await ctx.db
+      .query('organizations')
+      .withIndex('by_invite_code', (q) => q.eq('inviteCode', args.inviteCode))
+      .first();
+
+    if (!organization) {
+      throw new Error('Organization not found with this invite code.');
+    }
+
+    // 既に参加済みかチェック
+    const existingMembership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', user._id).eq('organizationId', organization._id),
+      )
+      .first();
+
+    if (existingMembership) {
+      throw new Error('You are already a member of this organization.');
+    }
+
+    // メンバーとして追加
+    await ctx.db.insert('memberships', {
+      userId: user._id,
+      organizationId: organization._id,
+      role: 'member', // デフォルトは 'member' ロール
+    });
+
+    return { organizationId: organization._id };
+  },
+});

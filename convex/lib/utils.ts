@@ -49,3 +49,18 @@ export async function validateRequest(
     return undefined;
   }
 }
+
+/**
+ * 指定された長さのランダムな英数字の文字列を生成する
+ * @param length 生成する文字列の長さ (デフォルトは8)
+ * @returns ランダムな文字列
+ */
+export function generateShortId(length: number = 8): string {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
