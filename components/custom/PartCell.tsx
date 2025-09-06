@@ -43,7 +43,7 @@ export function PartCell({ member, parts }: PartCellProps) {
   };
 
   return (
-    <Select value={member.partId ?? ''} onValueChange={handlePartChange}>
+    <Select value={member.part?._id ?? ''} onValueChange={handlePartChange}>
       <SelectTrigger className="w-40 border-none bg-transparent shadow-none focus:ring-0">
         <SelectValue placeholder="パートを選択" />
       </SelectTrigger>

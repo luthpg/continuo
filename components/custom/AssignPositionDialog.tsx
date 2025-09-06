@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from 'convex/react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 

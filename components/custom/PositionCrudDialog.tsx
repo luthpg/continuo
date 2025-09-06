@@ -73,7 +73,7 @@ export function PositionCrudDialog({
       }
       setIsOpen(false);
       form.reset();
-    } catch (error) {
+    } catch (_error) {
       toast.error('操作に失敗しました');
     }
   };

@@ -19,6 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
 import { useConcertStore } from '@/stores/concert';
+import type { TMember } from '@/types/member';
 
 function MembersPageContent() {
   const { activeOrgId } = useConcertStore();
@@ -33,7 +34,7 @@ function MembersPageContent() {
     activeOrgId ? { organizationId: activeOrgId } : 'skip',
   );
 
-  const handleRowClick = (row: (typeof members)[0]) => {
+  const handleRowClick = (row: TMember) => {
     if (!row) return;
     router.push(`/hall/members/${row._id}`);
   };

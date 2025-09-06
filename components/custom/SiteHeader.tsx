@@ -15,7 +15,6 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
-import type { Doc } from '@/convex/_generated/dataModel';
 import { useConcertStore } from '@/stores/concert';
 
 function HeaderContent() {
@@ -53,7 +52,7 @@ function HeaderContent() {
             </SelectTrigger>
             <SelectContent>
               {organizations
-                .filter((org): org is Doc<'organizations'> => !!org)
+                .filter((org) => !!org)
                 .map((org) => (
                   <SelectItem key={org._id} value={org._id}>
                     {org.name}

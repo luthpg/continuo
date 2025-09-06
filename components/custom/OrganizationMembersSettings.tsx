@@ -104,7 +104,7 @@ export function OrganizationMembersSettings({
                     </p>
                   </div>
                 </TableCell>
-                <TableCell>{member.part}</TableCell>
+                <TableCell>{member.part?.name}</TableCell>
                 <TableCell>{member.role}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

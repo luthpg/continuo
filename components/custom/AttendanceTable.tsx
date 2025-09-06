@@ -231,6 +231,11 @@ export function AttendanceTable({
                     highlightedMember === member._id ? null : member._id,
                   )
                 }
+                onKeyUp={() =>
+                  setHighlightedMember(
+                    highlightedMember === member._id ? null : member._id,
+                  )
+                }
               >
                 <div className="font-medium">{member.name}</div>
                 <div className="text-xs text-muted-foreground">

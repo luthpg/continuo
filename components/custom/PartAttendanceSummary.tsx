@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import type { TAttendance, TEvent, TMember, TStatus } from '@/types/attendance';
+import type { TEvent, TMember, TStatus } from '@/types/attendance';
 
 // attendancesはMapに変換済みのものを渡すことを想定
 type PartAttendanceSummaryProps = {
@@ -23,7 +23,7 @@ export function PartAttendanceSummary({
       if (!membersByPart.has(part)) {
         membersByPart.set(part, []);
       }
-      membersByPart.get(part)!.push(member);
+      membersByPart.get(part)?.push(member);
     });
 
     const summaries = Array.from(membersByPart.entries()).map(

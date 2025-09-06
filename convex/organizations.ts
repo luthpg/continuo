@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import type { Doc, Id } from './_generated/dataModel';
+import type { Doc } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { isValidRoleUser } from './lib/role';
 import { generateShortId } from './lib/utils';
@@ -28,7 +28,7 @@ export const create = mutation({
 
     // ユニークな招待コードを生成
     let inviteCode: string;
-    let existingOrg;
+    let existingOrg: Doc<'organizations'> | null;
     do {
       inviteCode = generateShortId();
       existingOrg = await ctx.db

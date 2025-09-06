@@ -32,6 +32,7 @@ export function Seat({ seat, isSwapMode, onClick, isSelected }: SeatProps) {
     <div
       ref={setNodeRef}
       onClick={handleClick}
+      onKeyUp={handleClick}
       className={cn(
         'w-full h-12 rounded-md border-2 flex items-center justify-center transition-colors p-1',
         isSwapMode && 'cursor-pointer hover:bg-accent',

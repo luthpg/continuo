@@ -1,8 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from 'convex/react';
-import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PartCrudDialog } from '@/components/custom/PartCrudDialog';
 import {
