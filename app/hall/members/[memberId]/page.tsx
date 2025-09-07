@@ -57,7 +57,8 @@ export default function MemberProfilePage() {
     return <div>メンバーが見つかりません。</div>;
   }
 
-  const { name, imageUrl, email, role, part, bio, positions } = memberDetails;
+  const { name, displayName, imageUrl, email, role, part, bio, positions } =
+    memberDetails;
 
   return (
     <div className="flex-1 flex flex-col gap-6 p-4 md:p-6">
@@ -65,11 +66,11 @@ export default function MemberProfilePage() {
         <Avatar className="h-24 w-24 border">
           <AvatarImage src={imageUrl ?? undefined} />
           <AvatarFallback className="text-3xl">
-            {name?.charAt(0)}
+            {(displayName ?? name)?.charAt(0)}
           </AvatarFallback>
         </Avatar>
         <div className="grid gap-1">
-          <h1 className="text-3xl font-bold">{name}</h1>
+          <h1 className="text-3xl font-bold">{displayName ?? name}</h1>
           <p className="text-muted-foreground">{email}</p>
           <div className="flex flex-wrap gap-2 mt-1">
             <Badge variant="secondary">{role}</Badge>

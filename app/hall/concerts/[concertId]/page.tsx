@@ -241,10 +241,14 @@ export default function ConcertDetailPage() {
                   <div className="flex items-center gap-4">
                     <Avatar>
                       <AvatarImage src={member.imageUrl ?? undefined} />
-                      <AvatarFallback>{member.name?.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {(member.displayName ?? member.name)?.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">{member.name}</p>
+                      <p className="font-semibold">
+                        {member.displayName ?? member.name}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {member.concertRole}
                       </p>

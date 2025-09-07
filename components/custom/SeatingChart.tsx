@@ -64,6 +64,7 @@ export function SeatingChart({
       .map((m) => ({
         _id: m._id,
         name: m.name,
+        displayName: m.displayName,
         part: m.part?.name ?? 'Unknown',
         imageUrl: m.imageUrl,
       }));
@@ -87,12 +88,13 @@ export function SeatingChart({
       const member = {
         _id: memberData._id,
         name: memberData.name ?? 'No Name',
+        displayName: memberData.displayName,
         part:
-          initialMembers.find((m) => m._id === memberData.name)?.part?._id ??
+          initialMembers.find((m) => m._id === memberData._id)?.part?.name ??
           'Unknown',
         imageUrl: memberData.imageUrl,
       };
-      setActiveMember(member);
+      setActiveMember(member as TMemberListMember);
     }
   };
 

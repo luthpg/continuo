@@ -61,12 +61,10 @@ export const createConvexUser = internalMutation({
  */
 export const updateUserProfile = mutation({
   args: {
-    name: v.optional(v.string()),
-    email: v.optional(v.string()),
-    imageUrl: v.optional(v.string()),
+    displayName: v.optional(v.string()),
     bio: v.optional(v.string()),
   },
-  handler: async (ctx, { name, email, imageUrl, bio }) => {
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error('認証されていません。');
@@ -83,10 +81,8 @@ export const updateUserProfile = mutation({
     }
 
     await ctx.db.patch(user._id, {
-      name: name,
-      email: email,
-      imageUrl: imageUrl,
-      bio: bio,
+      displayName: args.displayName,
+      bio: args.bio,
     });
   },
 });
@@ -257,6 +253,7 @@ export const getMembersByConcert = query({
           return {
             _id: user._id,
             name: user.name ?? 'No Name',
+            displayName: user.displayName,
             email: user.email ?? '',
             imageUrl: user.imageUrl ?? '',
             part: partName,

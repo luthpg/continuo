@@ -40,25 +40,27 @@ export const getColumns = (parts: Doc<'parts'>[]): ColumnDef<TMember>[] => [
     enableHiding: false,
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'displayName',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="名前" />
+      <DataTableColumnHeader column={column} title="表示名" />
     ),
     cell: ({ row }) => {
       const member = row.original;
+      const name = member.displayName ?? member.name;
       return (
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src={member.imageUrl} alt={member.name} />
-            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={member.imageUrl} alt={name} />
+            <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium">{member.name}</div>
+            <div className="font-medium">{name}</div>
             <div className="text-sm text-muted-foreground">{member.email}</div>
           </div>
         </div>
       );
     },
+    accessorFn: (row) => row.displayName ?? row.name,
   },
   {
     accessorKey: 'part',

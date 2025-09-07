@@ -29,7 +29,8 @@ export function Seat({ seat, isSwapMode, onClick, isSelected }: SeatProps) {
   };
 
   return (
-    <div
+    <button
+      type="button"
       ref={setNodeRef}
       onClick={handleClick}
       onKeyUp={handleClick}
@@ -46,7 +47,11 @@ export function Seat({ seat, isSwapMode, onClick, isSelected }: SeatProps) {
     >
       {seat.user ? (
         <DraggableMember
-          member={{ ...seat.user, name: seat.user.name ?? '', part: 'Unknown' }}
+          member={{
+            ...seat.user,
+            name: seat.user.displayName ?? seat.user.name ?? '',
+            part: 'Unknown',
+          }}
           isDraggable={!isSwapMode}
         />
       ) : (
@@ -54,6 +59,6 @@ export function Seat({ seat, isSwapMode, onClick, isSelected }: SeatProps) {
           {seatLabel}
         </span>
       )}
-    </div>
+    </button>
   );
 }

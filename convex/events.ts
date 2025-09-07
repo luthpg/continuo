@@ -67,18 +67,24 @@ export const create = mutation({
     });
     if (!isAuthed) throw new Error('Not authorized');
 
-    const { isRecurring, ...eventData } = args;
+    const {
+      isRecurring,
+      frequency,
+      interval,
+      weekdays,
+      until,
+      ...eventCoreData
+    } = args;
 
     if (!isRecurring) {
       // Single event creation
       await ctx.db.insert('events', {
-        ...eventData,
+        ...eventCoreData,
         organizationId: concert.organizationId,
       });
     } else {
       // Recurring event creation
-      const { frequency, interval, until, startAt, endAt, weekdays } =
-        eventData;
+      const { startAt, endAt } = eventCoreData;
       if (!frequency || !interval || !until) {
         throw new Error('Incomplete repetition rule');
       }
@@ -107,7 +113,7 @@ export const create = mutation({
         if (frequency === 'weekly') {
           if (targetWeekdays?.includes(currentDate.day())) {
             eventsToCreate.push({
-              ...eventData,
+              ...eventCoreData,
               startAt: currentDate.toISOString(),
               endAt: currentDate.add(eventDuration).toISOString(),
               organizationId: concert.organizationId,
@@ -117,7 +123,7 @@ export const create = mutation({
         } else if (frequency === 'monthly') {
           if (currentDate.date() === startDate.date()) {
             eventsToCreate.push({
-              ...eventData,
+              ...eventCoreData,
               startAt: currentDate.toISOString(),
               endAt: currentDate.add(eventDuration).toISOString(),
               organizationId: concert.organizationId,

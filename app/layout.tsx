@@ -24,17 +24,17 @@ export const metadata: Metadata = {
     title: 'continuo',
     description: 'All utils for your Orchestra support',
     siteName: 'continuo',
-    images: './icon.png',
+    // images: './icon.png',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'continuo',
     description: 'All utils for your Orchestra support',
-    images: './icon.png',
+    // images: './icon.png',
   },
   icons: {
     icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    // apple: '/apple-touch-icon.png',
   },
 };
 

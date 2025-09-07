@@ -7,6 +7,8 @@ export type TStatus = Doc<'attendances'>['status'];
 export type TMember = {
   _id: Doc<'users'>['_id'];
   name: string;
+  displayName: string | undefined;
+  email: string;
   part: string;
   imageUrl: string;
 };

@@ -138,10 +138,14 @@ export function OrganizationMembersSettings({
                 <TableCell className="flex items-center gap-4">
                   <Avatar>
                     <AvatarImage src={member.imageUrl ?? undefined} />
-                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>
+                      {(member.displayName ?? member.name).charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{member.name}</p>
+                    <p className="font-medium">
+                      {member.displayName ?? member.name}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       {member.email}
                     </p>

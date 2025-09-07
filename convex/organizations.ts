@@ -209,6 +209,7 @@ export const getMembersByOrganization = query({
           _id: user._id,
           clerkId: user.clerkId,
           name: user.name ?? 'No Name',
+          displayName: user.displayName,
           email: user.email ?? '',
           imageUrl: user.imageUrl,
           role: membership.role,

@@ -131,7 +131,9 @@ export function AttendanceTable({
                   <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium text-sm">{member.name}</div>
+                  <div className="font-medium text-sm">
+                    {member.displayName ?? member.name}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {member.part}
                   </div>

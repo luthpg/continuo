@@ -14,6 +14,7 @@ export type TPart = Doc<'parts'>;
 export type TMemberListMember = {
   _id: Doc<'users'>['_id'];
   name: string;
+  displayName?: string | null;
   part: string;
   imageUrl?: string;
 };

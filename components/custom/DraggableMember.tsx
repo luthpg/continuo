@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import type { TMemberListMember } from '@/types/seating';
 
 type DraggableMemberProps = {
-  member: TMemberListMember;
+  member: TMemberListMember & { displayName?: string | null };
   isDragging?: boolean;
   isDraggable?: boolean;
 };
@@ -19,6 +19,8 @@ export function DraggableMember({
     id: member._id,
     disabled: !isDraggable,
   });
+
+  const name = member.displayName ?? member.name;
 
   const style = transform
     ? {
@@ -40,10 +42,10 @@ export function DraggableMember({
       </div>
       <Avatar className="h-7 w-7">
         <AvatarImage src={member.imageUrl} />
-        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+        <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1 overflow-hidden">
-        <p className="text-xs font-medium truncate">{member.name}</p>
+        <p className="text-xs font-medium truncate">{name}</p>
         <p className="text-[10px] text-muted-foreground truncate">
           {member.part}
         </p>

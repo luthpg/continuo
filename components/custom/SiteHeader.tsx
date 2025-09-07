@@ -1,9 +1,21 @@
 'use client';
 
-import { UserButton } from '@clerk/nextjs';
+import { UserButton, useClerk, useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
+import { LogOut, Settings, User } from 'lucide-react';
 import { Suspense } from 'react';
 import { ConcertFilter } from '@/components/custom/ConcertFilter';
+import { ProfileEditDialog } from '@/components/custom/ProfileEditDialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -15,10 +27,14 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
+import type { Doc } from '@/convex/_generated/dataModel';
 import { useConcertStore } from '@/stores/concert';
 
 function HeaderContent() {
   const { activeOrgId, activeConcertId, setActiveOrgId } = useConcertStore();
+  const { user } = useUser();
+  const { signOut, openUserProfile } = useClerk();
+  const convexUser = useQuery(api.users.getCurrentUser);
 
   const organizations = useQuery(api.organizations.getForUser);
 
@@ -73,7 +89,51 @@ function HeaderContent() {
       </div>
 
       <div className="ml-auto hidden items-center gap-4 md:flex">
-        <UserButton afterSignOutUrl="/" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-full"
+            >
+              <Avatar>
+                <AvatarImage src={user?.imageUrl} />
+                <AvatarFallback>
+                  {convexUser?.displayName?.charAt(0) ??
+                    user?.firstName?.charAt(0) ??
+                    ''}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end">
+            <DropdownMenuLabel>
+              <p className="truncate">
+                {convexUser?.displayName ?? user?.fullName}
+              </p>
+              <p className="text-xs font-normal text-muted-foreground truncate">
+                {user?.primaryEmailAddress?.toString()}
+              </p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <ProfileEditDialog>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>プロフィール設定</span>
+                </DropdownMenuItem>
+              </ProfileEditDialog>
+              <DropdownMenuItem onClick={() => openUserProfile()}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>アカウント管理</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>サインアウト</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

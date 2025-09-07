@@ -1,13 +1,15 @@
 'use client';
 
-import { useConvexAuth } from 'convex/react';
+import { useConvexAuth, useQuery } from 'convex/react';
 import { redirect, usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import { AppSidebar } from '@/components/custom/AppSidebar';
 import { DynamicTheme } from '@/components/custom/DynamicTheme';
+import { ForceProfileSetupDialog } from '@/components/custom/ForceProfileSetupDialog';
 import { FullPageSpinner } from '@/components/custom/FullPageSpinner';
 import { SiteHeader } from '@/components/custom/SiteHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { api } from '@/convex/_generated/api';
 import { useConcertStore } from '@/stores/concert';
 
 function HallLayoutContent({
@@ -19,6 +21,9 @@ function HallLayoutContent({
   const path = usePathname();
 
   const { activeOrgId } = useConcertStore();
+  const currentUser = useQuery(api.users.getCurrentUser);
+
+  const needsProfileSetup = !!currentUser && !currentUser.displayName;
 
   // organizationIdがURLにない場合、選択ページにリダイレクト
   if (activeOrgId == null && path !== '/hall/select-org') {
@@ -35,6 +40,9 @@ function HallLayoutContent({
         } as React.CSSProperties
       }
     >
+      {needsProfileSetup && (
+        <ForceProfileSetupDialog isOpen={needsProfileSetup} />
+      )}
       {activeOrgId && <DynamicTheme organizationId={activeOrgId} />}
       <AppSidebar variant="inset" />
       <SidebarInset>

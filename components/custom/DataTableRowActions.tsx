@@ -30,6 +30,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { activeOrgId } = useConcertStore();
 
   const member = row.original;
+  const displayName = member.displayName ?? member.name;
   const [currentRole, setCurrentRole] = useState(member.role);
 
   const updateRole = useMutation(api.memberships.updateMemberRole);
@@ -46,7 +47,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         newRole,
       }),
       {
-        loading: `${member.name}の役割を更新中...`,
+        loading: `${displayName}の役割を更新中...`,
         success: '役割を更新しました',
         error: '役割の更新に失敗しました',
       },
@@ -62,7 +63,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         targetUserId: member._id,
       }),
       {
-        loading: `${member.name}を削除中...`,
+        loading: `${displayName}を削除中...`,
         success: 'メンバーを削除しました',
         error: 'メンバーの削除に失敗しました',
       },
