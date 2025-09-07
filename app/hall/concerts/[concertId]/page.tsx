@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { AddConcertMemberDialog } from '@/components/custom/AddConcertMemberDialog';
 import { FullPageSpinner } from '@/components/custom/FullPageSpinner';
 import { ProgramCrudDialog } from '@/components/custom/ProgramCrudDialog';
+import { ProgramPartSettingDialog } from '@/components/custom/ProgramPartSettingDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -178,6 +179,7 @@ export default function ConcertDetailPage() {
                   <TableRow>
                     <TableHead>曲順</TableHead>
                     <TableHead>曲名</TableHead>
+                    <TableHead>パート編成</TableHead>
                     <TableHead className="text-right">操作</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -188,6 +190,13 @@ export default function ConcertDetailPage() {
                         {program.orderName || program.orderIndex}
                       </TableCell>
                       <TableCell>{program.name}</TableCell>
+                      <TableCell>
+                        <ProgramPartSettingDialog program={program}>
+                          <Button variant="outline" size="sm">
+                            設定
+                          </Button>
+                        </ProgramPartSettingDialog>
+                      </TableCell>
                       <TableCell className="text-right">
                         <ProgramCrudDialog
                           mode="edit"

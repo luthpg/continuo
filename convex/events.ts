@@ -1,4 +1,7 @@
+'use client';
+
 import { v } from 'convex/values';
+import dayjs from 'dayjs';
 import { mutation, query } from './_generated/server';
 import { isValidRoleUser } from './lib/role';
 
@@ -42,11 +45,14 @@ export const create = mutation({
     title: v.string(),
     startAt: v.string(),
     endAt: v.string(),
-    conductor: v.optional(v.string()),
-    type: v.optional(v.id('eventTypes')),
     place: v.optional(v.string()),
     description: v.optional(v.string()),
-    programs: v.optional(v.array(v.id('programs'))),
+    // Repetition rule
+    isRecurring: v.optional(v.boolean()),
+    frequency: v.optional(v.union(v.literal('weekly'), v.literal('monthly'))),
+    interval: v.optional(v.number()),
+    weekdays: v.optional(v.array(v.string())), // "SU", "MO", ...
+    until: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -61,11 +67,76 @@ export const create = mutation({
     });
     if (!isAuthed) throw new Error('Not authorized');
 
-    const eventId = await ctx.db.insert('events', {
-      ...args,
-      organizationId: concert.organizationId,
-    });
-    return eventId;
+    const { isRecurring, ...eventData } = args;
+
+    if (!isRecurring) {
+      // Single event creation
+      await ctx.db.insert('events', {
+        ...eventData,
+        organizationId: concert.organizationId,
+      });
+    } else {
+      // Recurring event creation
+      const { frequency, interval, until, startAt, endAt, weekdays } =
+        eventData;
+      if (!frequency || !interval || !until) {
+        throw new Error('Incomplete repetition rule');
+      }
+
+      const startDate = dayjs(startAt);
+      const eventDuration = dayjs(endAt).diff(startDate);
+      const untilDate = dayjs(until);
+      const weekdayMap: { [key: string]: number } = {
+        SU: 0,
+        MO: 1,
+        TU: 2,
+        WE: 3,
+        TH: 4,
+        FR: 5,
+        SA: 6,
+      };
+      const targetWeekdays = weekdays?.map((d) => weekdayMap[d]);
+
+      const eventsToCreate = [];
+      let currentDate = startDate;
+
+      while (
+        currentDate.isBefore(untilDate) ||
+        currentDate.isSame(untilDate, 'day')
+      ) {
+        if (frequency === 'weekly') {
+          if (targetWeekdays?.includes(currentDate.day())) {
+            eventsToCreate.push({
+              ...eventData,
+              startAt: currentDate.toISOString(),
+              endAt: currentDate.add(eventDuration).toISOString(),
+              organizationId: concert.organizationId,
+            });
+          }
+          currentDate = currentDate.add(1, 'day');
+        } else if (frequency === 'monthly') {
+          if (currentDate.date() === startDate.date()) {
+            eventsToCreate.push({
+              ...eventData,
+              startAt: currentDate.toISOString(),
+              endAt: currentDate.add(eventDuration).toISOString(),
+              organizationId: concert.organizationId,
+            });
+          }
+          currentDate = currentDate.add(1, 'day');
+        }
+      }
+
+      // Apply interval
+      const finalEvents = eventsToCreate.filter((_, index) => {
+        if (interval === 1) return true;
+        return index % interval === 0;
+      });
+
+      await Promise.all(
+        finalEvents.map((event) => ctx.db.insert('events', event)),
+      );
+    }
   },
 });
 

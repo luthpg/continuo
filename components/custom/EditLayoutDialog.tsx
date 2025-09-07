@@ -2,7 +2,7 @@
 
 import { useMutation } from 'convex/react';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import type { TPart } from '@/types/seating';
 
 type EditLayoutDialogProps = {
@@ -32,6 +32,7 @@ type EditLayoutDialogProps = {
   organizationId: Id<'organizations'>;
   parts: TPart[];
   programId: Id<'programs'> | null;
+  programParts?: Doc<'programParts'>[] | null;
 };
 
 type LayoutRow = {
@@ -45,12 +46,27 @@ export function EditLayoutDialog({
   organizationId,
   parts,
   programId,
+  programParts,
 }: EditLayoutDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [layout, setLayout] = useState<LayoutRow[]>([
     { id: 1, partId: '', count: 1 },
   ]);
   const createOrUpdateLayout = useMutation(api.seatings.createOrUpdateLayout);
+
+  useEffect(() => {
+    if (isOpen && programParts && programParts.length > 0) {
+      const newLayout = programParts.map((pp, index) => ({
+        id: Date.now() + index,
+        partId: pp.partId,
+        count: pp.count,
+      }));
+      setLayout(newLayout);
+    } else if (isOpen) {
+      // 設定がない場合はデフォルト
+      setLayout([{ id: 1, partId: '', count: 1 }]);
+    }
+  }, [isOpen, programParts]);
 
   const addRow = () => {
     setLayout([...layout, { id: Date.now(), partId: '', count: 1 }]);

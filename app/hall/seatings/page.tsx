@@ -41,6 +41,10 @@ export default function SeatingsPage() {
       ? { concertId: activeConcertId, programId: selectedProgramId }
       : 'skip',
   );
+  const programParts = useQuery(
+    api.programParts.getPartSettings,
+    selectedProgramId ? { programId: selectedProgramId } : 'skip',
+  );
 
   if (!activeOrgId || !activeConcertId) {
     return (
@@ -91,6 +95,7 @@ export default function SeatingsPage() {
             concertId={activeConcertId}
             parts={parts}
             programId={selectedProgramId}
+            programParts={programParts}
           />
           <Button variant="outline" onClick={() => window.print()}>
             印刷

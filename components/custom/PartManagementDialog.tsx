@@ -4,6 +4,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PartCrudDialog } from '@/components/custom/PartCrudDialog';
+import { PartTemplateSelector } from '@/components/custom/PartTemplateSelector';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -68,10 +70,11 @@ export function PartManagementDialog() {
         <DialogHeader>
           <DialogTitle>パート管理</DialogTitle>
           <DialogDescription>
-            団体のパートを作成、編集、削除します。
+            団体のパートを作成、編集、削除します。テンプレートから一括で読み込むこともできます。
           </DialogDescription>
         </DialogHeader>
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between pt-4">
+          {activeOrgId && <PartTemplateSelector organizationId={activeOrgId} />}
           <PartCrudDialog mode="create" organizationId={activeOrgId!}>
             <Button size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -79,7 +82,8 @@ export function PartManagementDialog() {
             </Button>
           </PartCrudDialog>
         </div>
-        <div className="mt-4 max-h-[60vh] overflow-y-auto rounded-md border">
+        <Separator className="my-4" />
+        <div className="max-h-[50vh] overflow-y-auto rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>

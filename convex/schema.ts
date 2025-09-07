@@ -169,4 +169,13 @@ export default defineSchema({
   })
     .index('by_user_org', ['userId', 'organizationId'])
     .index('by_position', ['positionId']),
+
+  programParts: defineTable({
+    programId: v.id('programs'),
+    partId: v.id('parts'),
+    count: v.number(),
+    organizationId: v.id('organizations'),
+  })
+    .index('by_program', ['programId'])
+    .index('by_program_part', ['programId', 'partId']),
 });
