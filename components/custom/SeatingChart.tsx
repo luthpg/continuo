@@ -64,7 +64,7 @@ export function SeatingChart({
       .map((m) => ({
         _id: m._id,
         name: m.name,
-        part: m.part,
+        part: m.part?.name ?? 'Unknown',
         imageUrl: m.imageUrl,
       }));
     setUnassignedMembers(unassigned);
@@ -88,7 +88,7 @@ export function SeatingChart({
         _id: memberData._id,
         name: memberData.name ?? 'No Name',
         part:
-          initialMembers.find((m) => m._id === memberData._id)?.part ??
+          initialMembers.find((m) => m._id === memberData.name)?.part?._id ??
           'Unknown',
         imageUrl: memberData.imageUrl,
       };

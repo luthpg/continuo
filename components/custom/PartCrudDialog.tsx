@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FieldValues, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -51,8 +51,8 @@ export function PartCrudDialog({
   const createPart = useMutation(api.parts.create);
   const updatePart = useMutation(api.parts.update);
 
-  const form = useForm<PartFormValues>({
-    resolver: zodResolver(partFormSchema),
+  const form = useForm<FieldValues, unknown, PartFormValues>({
+    resolver: zodResolver<FieldValues, unknown, PartFormValues>(partFormSchema),
     defaultValues: {
       name: initialData?.name || '',
       maxCounts: initialData?.maxCounts,

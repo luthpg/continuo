@@ -87,16 +87,23 @@ export default function ConcertDetailPage() {
     return <div>演奏会が見つかりません。</div>;
   }
 
-  const { name, date, place, description, programs, members } = concertDetails;
+  const { name, description, programs, members } = concertDetails;
 
   // 参加していないメンバーを計算
   const unassignedMembers = orgMembers
-    ? orgMembers.filter(
-        (orgMember) =>
-          !members.some(
-            (concertMember) => concertMember?._id === orgMember._id,
-          ),
-      )
+    ? orgMembers
+        .filter(
+          (orgMember) =>
+            !members.some(
+              (concertMember) => concertMember?._id === orgMember._id,
+            ),
+        )
+        .map((orgMember) => ({
+          ...orgMember,
+          partId: orgMember.part?._id ?? null,
+          part: orgMember.part?.name ?? 'Unknown',
+          imageUrl: orgMember.imageUrl ?? null,
+        }))
     : [];
 
   const isAdmin = currentUserRole === 'admin' || currentUserRole === 'subAdmin';
