@@ -17,8 +17,14 @@ export const getSeatingChart = query({
       throw new Error('Not authenticated');
     }
 
+    const concert = await ctx.db.get(args.concertId);
+    if (!concert) {
+      throw new Error('Concert not found');
+    }
+
+    // 権限チェックを修正: 団体に所属しているメンバーであれば誰でも閲覧可能にする
     const isAuthed = await isValidRoleUser(ctx, identity.subject, {
-      concertId: args.concertId,
+      organizationId: concert.organizationId, // 演奏会ではなく、それが属する団体のIDでチェック
       requiredRoles: ['admin', 'subAdmin', 'member'],
     });
     if (!isAuthed) throw new Error('Not authorized');
@@ -63,6 +69,17 @@ export const assignMemberToSeat = mutation({
     });
     if (!isAuthed) throw new Error('Not authorized');
 
+    // 既に他の席に割り当てられている場合は、元の席から削除する
+    const sourceSeat = await ctx.db
+      .query('seatings')
+      .filter((q) => q.eq(q.field('userId'), args.userId))
+      .first();
+
+    if (sourceSeat) {
+      const { userId: _userId, ...rest } = sourceSeat;
+      await ctx.db.replace(sourceSeat._id, rest);
+    }
+
     await ctx.db.patch(args.seatingId, { userId: args.userId });
   },
 });
@@ -85,8 +102,8 @@ export const unassignMemberFromSeat = mutation({
     if (!isAuthed) throw new Error('Not authorized');
 
     const seat = await ctx.db.get(args.seatingId);
-    if (seat && 'userId' in seat) {
-      const { ...rest } = seat;
+    if (seat?.userId) {
+      const { userId: _userId, ...rest } = seat;
       await ctx.db.replace(args.seatingId, rest);
     }
   },
@@ -127,14 +144,15 @@ export const createOrUpdateLayout = mutation({
 
     // 新しいレイアウトを作成
     for (const part of args.layout) {
+      const partDoc = await ctx.db.get(part.partId);
+      if (!partDoc) continue;
+
+      const isStringPart = ['Violin', 'Viola', 'Violoncello', 'Contrabass'].some(
+        (instrument) => partDoc.name.includes(instrument),
+      );
+
       for (let i = 1; i <= part.count; i++) {
-        // 弦楽器はプルトを想定
-        const partDoc = await ctx.db.get(part.partId);
-        if (
-          partDoc?.name.includes('Violin') ||
-          partDoc?.name.includes('Viola') ||
-          partDoc?.name.includes('Cello')
-        ) {
+        if (isStringPart) {
           await ctx.db.insert('seatings', {
             concertId: args.concertId,
             organizationId: args.organizationId,
@@ -145,14 +163,13 @@ export const createOrUpdateLayout = mutation({
             isFrontOfPlut: i % 2 !== 0,
           });
         } else {
-          // その他は単一の席
           await ctx.db.insert('seatings', {
             concertId: args.concertId,
             organizationId: args.organizationId,
             programId: args.programId,
             partId: part.partId,
             type: 'part',
-            name: `${partDoc?.name} ${i}`,
+            name: `${partDoc.name} ${i}`,
             number: i,
           });
         }

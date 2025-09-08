@@ -14,12 +14,12 @@ type SeatProps = {
 export function Seat({ seat, isSwapMode, onClick, isSelected }: SeatProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: seat._id,
-    disabled: isSwapMode, // 入れ替えモード中はドロップを無効化
+    disabled: isSwapMode,
   });
 
   const seatLabel =
     seat.type === 'plut'
-      ? `${seat.number}プルト ${seat.isFrontOfPlut ? '表' : '裏'}`
+      ? `${seat.number}${seat.isFrontOfPlut ? '表' : '裏'}`
       : seat.name;
 
   const handleClick = () => {
@@ -35,14 +35,20 @@ export function Seat({ seat, isSwapMode, onClick, isSelected }: SeatProps) {
       onClick={handleClick}
       onKeyUp={handleClick}
       className={cn(
-        'w-full h-12 rounded-md border-2 flex items-center justify-center transition-colors p-1',
-        isSwapMode && 'cursor-pointer hover:bg-accent',
+        'w-full h-12 rounded-md border flex items-center justify-center transition-all p-1 group',
+        // モード別スタイル
+        isSwapMode && 'cursor-pointer hover:bg-accent/80',
         isSelected && 'ring-2 ring-primary ring-offset-2',
+
+        // D&Dオーバー時スタイル
         isOver
-          ? 'border-primary bg-primary/10'
-          : seat.user
-            ? 'border-solid border-primary/50'
-            : 'border-dashed border-border',
+          ? 'border-primary bg-primary/10 ring-2 ring-primary/50'
+          : 'border-border',
+
+        // メンバー有無スタイル
+        seat.user
+          ? 'bg-background'
+          : 'bg-muted/50 border-dashed hover:border-solid hover:bg-muted',
       )}
     >
       {seat.user ? (
@@ -55,7 +61,7 @@ export function Seat({ seat, isSwapMode, onClick, isSelected }: SeatProps) {
           isDraggable={!isSwapMode}
         />
       ) : (
-        <span className="text-[10px] text-muted-foreground text-center">
+        <span className="text-[10px] text-muted-foreground text-center truncate">
           {seatLabel}
         </span>
       )}

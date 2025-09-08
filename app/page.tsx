@@ -1,6 +1,6 @@
 'use client';
 
-import { SignInButton, SignUpButton } from '@clerk/nextjs'; // SignUpButton を追加
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 import { useConvexAuth } from 'convex/react';
 import { CalendarCheck, FileMusic, Megaphone, Users } from 'lucide-react';
 import { redirect } from 'next/navigation';
@@ -23,9 +23,9 @@ export default function Home() {
     <div className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex justify-center">
-        <div className="container flex h-14 items-center">
-          <div className="mx-4 flex items-center">
-            <a className="mr-6 flex items-center space-x-2" href="/">
+        <div className="container flex h-14 items-center px-3">
+          <div className="mr-auto flex items-center">
+            <a className="flex items-center space-x-2" href="/">
               <span className="logo-style font-bold sm:inline-block text-2xl">
                 Continuo.
               </span>
@@ -33,10 +33,10 @@ export default function Home() {
           </div>
           <div className="flex flex-1 items-center justify-end space-x-2">
             <SignInButton mode="modal">
-              <Button variant="ghost">Sign In</Button>
+              <Button variant="ghost">ログイン</Button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <Button>Sign Up</Button>
+              <Button>サインアップ</Button>
             </SignUpButton>
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function Home() {
                     出欠管理
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1">
                   <p className="text-sm text-muted-foreground">
                     練習やイベントの出欠をオンラインで簡単に提出・確認できます。
                   </p>
@@ -105,7 +105,7 @@ export default function Home() {
                     楽譜・音源共有
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1">
                   <p className="text-sm text-muted-foreground">
                     パート譜や参考音源をアップロードし、メンバー全員で共有できます。
                   </p>
@@ -118,7 +118,7 @@ export default function Home() {
                     イベント管理
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1">
                   <p className="text-sm text-muted-foreground">
                     演奏会や合宿などのイベント情報を一元管理。詳細はいつでも確認可能。
                   </p>
@@ -131,7 +131,7 @@ export default function Home() {
                     座席表作成
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1">
                   <p className="text-sm text-muted-foreground">
                     演奏会ごとの座席表をドラッグ＆ドロップで直感的に作成・共有。
                   </p>
@@ -144,9 +144,9 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t">
-        <div className="container flex flex-col items-center justify-center gap-2 py-6 sm:flex-row">
+        <div className="flex flex-col items-center justify-center gap-2 py-6 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            © 2024 Continuo. All rights reserved.
+            © 2025 Continuo. All rights reserved.
           </p>
         </div>
       </footer>

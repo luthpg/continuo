@@ -95,14 +95,14 @@ export default function SelectOrgPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/50">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl w-full p-4">
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>団体を選択</CardTitle>
             <CardDescription>
               参加している団体を選択してください。
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex-1 space-y-4">
             {organizations && organizations.length > 0 ? (
               <Select onValueChange={handleSelectOrg}>
                 <SelectTrigger>
@@ -146,14 +146,14 @@ export default function SelectOrgPage() {
           </CardFooter>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>団体に参加</CardTitle>
             <CardDescription>
               招待コードを使って団体に参加します。
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <Label htmlFor="invite-code">招待コード</Label>
             <Input
               id="invite-code"
@@ -169,14 +169,14 @@ export default function SelectOrgPage() {
           </CardFooter>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>新しい団体を作成</CardTitle>
             <CardDescription>
               新しいオーケストラ団体を登録します。
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <Label htmlFor="new-org-name">団体名</Label>
             <Input
               id="new-org-name"

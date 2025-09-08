@@ -104,7 +104,7 @@ function CalendarPageContent() {
               open={isEditDialogOpen}
               onOpenChange={setIsEditDialogOpen}
             >
-              <></>
+              <div></div>
             </EventCrudDialog>
             <AttendanceTable
               members={members}

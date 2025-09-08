@@ -18,10 +18,8 @@ import { DraggableMember } from '@/components/custom/DraggableMember';
 import { MemberList } from '@/components/custom/MemberList';
 import { OrchestraLayout } from '@/components/custom/OrchestraLayout';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
-import { useIsMobile } from '@/hooks/use-mobile';
 import type { TMember } from '@/types/member';
 import type { TMemberListMember, TPart, TSeating } from '@/types/seating';
 
@@ -38,7 +36,6 @@ export function SeatingChart({
   parts,
   organizationId,
 }: SeatingChartProps) {
-  const isMobile = useIsMobile();
   const [seatingChart, setSeatingChart] = useState(initialSeatingChart);
   const [unassignedMembers, setUnassignedMembers] = useState<
     TMemberListMember[]
@@ -107,25 +104,39 @@ export function SeatingChart({
     const memberId = active.id as Id<'users'>;
     const targetId = over.id as string;
 
+    // unassigned-area (MemberList)にドロップされた場合
     if (targetId === 'unassigned-area') {
       const sourceSeat = seatingChart.find((s) => s.userId === memberId);
       if (sourceSeat) {
-        await unassignMember({
-          seatingId: sourceSeat._id,
-          organizationId,
-        });
-        toast.success(`${activeMember?.name}を席から外しました。`);
+        toast.promise(
+          unassignMember({
+            seatingId: sourceSeat._id,
+            organizationId,
+          }),
+          {
+            loading: `${activeMember?.name}を席から外しています...`,
+            success: `${activeMember?.name}を席から外しました。`,
+            error: '操作に失敗しました。',
+          },
+        );
       }
       return;
     }
 
+    // 席にドロップされた場合
     const targetSeatId = targetId as Id<'seatings'>;
-    await assignMember({
-      seatingId: targetSeatId,
-      userId: memberId,
-      organizationId,
-    });
-    toast.success(`${activeMember?.name}を配置しました。`);
+    toast.promise(
+      assignMember({
+        seatingId: targetSeatId,
+        userId: memberId,
+        organizationId,
+      }),
+      {
+        loading: `${activeMember?.name}を配置しています...`,
+        success: `${activeMember?.name}を配置しました。`,
+        error: '配置に失敗しました。',
+      },
+    );
   };
 
   const handleSeatClick = (seatId: Id<'seatings'>) => {
@@ -136,7 +147,6 @@ export function SeatingChart({
       toast.info('入れ替える先の席を選択してください。');
     } else {
       if (firstSeatToSwap === seatId) {
-        // 同じ席をクリックしたら選択解除
         setFirstSeatToSwap(null);
         return;
       }
@@ -156,52 +166,24 @@ export function SeatingChart({
     }
   };
 
-  if (isMobile) {
-    return (
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <Tabs defaultValue="chart" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="chart">席次表</TabsTrigger>
-            <TabsTrigger value="members">メンバー</TabsTrigger>
-          </TabsList>
-          <TabsContent value="chart" className="flex-1 overflow-y-auto">
-            <OrchestraLayout seatingChart={seatingChart} parts={parts} />
-          </TabsContent>
-          <TabsContent value="members" className="flex-1">
-            <MemberList members={unassignedMembers} />
-          </TabsContent>
-        </Tabs>
-        <DragOverlay>
-          {activeMember ? (
-            <DraggableMember member={activeMember} isDragging />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-    );
-  }
-
   return (
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 h-full">
-        <div className="w-1/4">
+      <div className="flex flex-col md:flex-row gap-6 h-full">
+        <div className="w-full md:w-64">
           <MemberList members={unassignedMembers} />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col">
           <div className="flex justify-end mb-2">
             <Button
               variant={isSwapMode ? 'default' : 'outline'}
               size="sm"
               onClick={() => {
                 setIsSwapMode(!isSwapMode);
-                setFirstSeatToSwap(null); // モード切替時に選択解除
+                setFirstSeatToSwap(null);
               }}
             >
               <ArrowLeftRight className="h-4 w-4 mr-2" />
