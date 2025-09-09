@@ -56,6 +56,7 @@ type AttendanceCellProps = {
   comment?: string | null;
   instead?: string | null;
   onUpdate: (values: AttendanceFormValues) => void;
+  isEditable?: boolean;
 };
 
 export function AttendanceCell({
@@ -63,6 +64,7 @@ export function AttendanceCell({
   comment,
   instead,
   onUpdate,
+  isEditable = true,
 }: AttendanceCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { icon: Icon, color } = statusConfig[status];
@@ -92,8 +94,9 @@ export function AttendanceCell({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="w-full h-full flex items-center justify-center p-3 hover:bg-accent focus:outline-none focus:bg-accent transition-colors relative"
+          className="w-full h-full flex items-center justify-center p-3 hover:bg-accent focus:outline-none focus:bg-accent transition-colors relative disabled:cursor-not-allowed disabled:opacity-100 disabled:hover:bg-transparent"
           aria-label={`現在のステータス: ${statusConfig[status].label}`}
+          disabled={!isEditable}
         >
           <Icon className={cn('h-5 w-5', color)} />
           {(comment || instead) && (

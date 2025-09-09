@@ -156,15 +156,15 @@ export default function ConcertDetailPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 grid gap-6">
-          <Card>
+          <Card className="flex flex-col h-full">
             <CardHeader>
               <CardTitle>演奏会情報</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <p>{description || '詳細な説明はありません。'}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="flex flex-col h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>プログラム</CardTitle>
               <ProgramCrudDialog mode="create" concertId={concertId}>
@@ -173,7 +173,7 @@ export default function ConcertDetailPage() {
                 </Button>
               </ProgramCrudDialog>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -217,7 +217,7 @@ export default function ConcertDetailPage() {
         </div>
 
         <div className="md:col-span-1">
-          <Card>
+          <Card className="flex flex-col h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>参加メンバー</CardTitle>
@@ -232,7 +232,7 @@ export default function ConcertDetailPage() {
                 </Button>
               </AddConcertMemberDialog>
             </CardHeader>
-            <CardContent className="grid gap-4">
+            <CardContent className="flex-1 grid gap-4">
               {members.map((member) => (
                 <div
                   key={member.concertMembershipId}

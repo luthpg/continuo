@@ -59,39 +59,39 @@ import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { cn } from '@/lib/utils';
 
+const timeSlotValues = ['morning', 'afternoon', 'evening'] as const;
+export type TimeSlot = (typeof timeSlotValues)[number];
+
 const eventFormSchema = z
   .object({
     title: z.string().min(1, { message: 'タイトルは必須です。' }),
     place: z.string().optional(),
     description: z.string().optional(),
-    // Time settings
+    date: z.date({ error: '日付を選択してください。' }),
     timeInputMode: z.enum(['specific', 'slot']).default('specific'),
-    startAt: z.string(),
-    endAt: z.string(),
-    // Slot specific
-    date: z.date().optional(),
-    timeSlot: z.enum(['morning', 'afternoon', 'evening']).optional(),
-    // Recurring settings
     isRecurring: z.boolean().default(false),
     frequency: z.enum(['weekly', 'monthly']).optional(),
     interval: z.coerce.number().optional(),
     weekdays: z.array(z.string()).optional(),
     until: z.string().optional(),
   })
-  .refine(
-    (data) => {
-      if (data.timeInputMode === 'specific') {
-        return !!data.startAt && !!data.endAt;
-      }
-      if (data.timeInputMode === 'slot') {
-        return !!data.date && !!data.timeSlot;
-      }
-      return false;
-    },
-    {
-      message: '時間またはコマを正しく設定してください。',
-      path: ['timeInputMode'],
-    },
+  .and(
+    z.discriminatedUnion('timeInputMode', [
+      z.object({
+        timeInputMode: z.literal('specific'),
+        startTime: z.string().min(1, '開始時間を入力してください'),
+        endTime: z.string().min(1, '終了時間を入力してください'),
+        timeSlot: z.string(),
+      }),
+      z.object({
+        timeInputMode: z.literal('slot'),
+        timeSlot: z.enum(timeSlotValues, {
+          error: 'コマを選択してください。',
+        }),
+        startTime: z.string(),
+        endTime: z.string(),
+      }),
+    ]),
   )
   .refine(
     (data) => {
@@ -130,7 +130,10 @@ const weekdayOptions = [
   { value: 'SA', label: '土' },
 ];
 
-const timeSlots = {
+const timeSlots: Record<
+  TimeSlot,
+  { label: string; start: string; end: string }
+> = {
   morning: { label: '朝', start: '09:00', end: '12:00' },
   afternoon: { label: '昼', start: '13:00', end: '17:00' },
   evening: { label: '夜', start: '18:00', end: '21:00' },
@@ -145,18 +148,79 @@ interface EventCrudDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+function getInitialValues(initialData?: Doc<'events'>): EventFormValues {
+  if (!initialData) {
+    return {
+      title: '',
+      place: '',
+      description: '',
+      date: new Date(),
+      timeInputMode: 'specific',
+      startTime: '',
+      endTime: '',
+      timeSlot: '',
+      isRecurring: false,
+      interval: 1,
+      weekdays: [],
+      frequency: undefined,
+      until: undefined,
+    };
+  }
+
+  const startAt = dayjs(initialData.startAt);
+  const endAt = dayjs(initialData.endAt);
+
+  const startTime = startAt.format('HH:mm');
+  const endTime = endAt.format('HH:mm');
+
+  const matchedSlot = Object.entries(timeSlots).find(
+    ([, { start, end }]) => startTime === start && endTime === end,
+  )?.[0] as 'morning' | 'afternoon' | 'evening';
+
+  if (matchedSlot) {
+    return {
+      title: initialData.title,
+      place: initialData.place || '',
+      description: initialData.description || '',
+      date: startAt.toDate(),
+      timeInputMode: 'slot',
+      timeSlot: matchedSlot,
+      startTime: '',
+      endTime: '',
+      isRecurring: false,
+      interval: 1,
+      weekdays: [],
+      frequency: undefined,
+      until: undefined,
+    };
+  }
+
+  return {
+    title: initialData.title,
+    place: initialData.place || '',
+    description: initialData.description || '',
+    date: startAt.toDate(),
+    timeInputMode: 'specific',
+    startTime,
+    endTime,
+    timeSlot: '',
+    isRecurring: false,
+    interval: 1,
+    weekdays: [],
+    frequency: undefined,
+    until: undefined,
+  };
+}
+
 export function EventCrudDialog({
   mode,
   concertId,
   initialData,
   children,
   open,
-  onOpenChange,
+  // onOpenChange,
 }: EventCrudDialogProps) {
-  const [internalOpen, setInternalOpen] = useState(false);
-
-  const isOpen = open ?? internalOpen;
-  const setIsOpen = onOpenChange ?? setInternalOpen;
+  const [isOpen, setIsOpen] = useState(open ?? false);
 
   const createEvents = useMutation(api.events.create);
   const updateEvent = useMutation(api.events.update);
@@ -166,45 +230,58 @@ export function EventCrudDialog({
     resolver: zodResolver<FieldValues, unknown, EventFormValues>(
       eventFormSchema,
     ),
-    defaultValues: {
-      title: initialData?.title || '',
-      place: initialData?.place || '',
-      description: initialData?.description || '',
-      timeInputMode: 'specific',
-      startAt: initialData?.startAt || '',
-      endAt: initialData?.endAt || '',
-      isRecurring: false,
-      interval: 1,
-    },
+    defaultValues: getInitialValues(initialData),
   });
 
-  const { isSubmitting } = form.formState;
-  const timeInputMode: EventFormValues['timeInputMode'] =
-    form.watch('timeInputMode');
-  const isRecurring: EventFormValues['isRecurring'] = form.watch('isRecurring');
-  const selectedDate: EventFormValues['date'] = form.watch('date');
-  const selectedTimeSlot: EventFormValues['timeSlot'] = form.watch('timeSlot');
-
   useEffect(() => {
-    if (timeInputMode === 'slot' && selectedDate && selectedTimeSlot) {
-      const dateStr = dayjs(selectedDate).format('YYYY-MM-DD');
-      const { start, end } = timeSlots[selectedTimeSlot];
-      form.setValue('startAt', `${dateStr}T${start}`);
-      form.setValue('endAt', `${dateStr}T${end}`);
+    if (isOpen) {
+      form.reset(getInitialValues(initialData));
     }
-  }, [selectedDate, selectedTimeSlot, timeInputMode, form]);
+  }, [isOpen, initialData, form]);
+
+  const { isSubmitting } = form.formState;
+  const timeInputMode = form.watch('timeInputMode');
+  const isRecurring = form.watch('isRecurring');
 
   const handleSubmit = async (values: EventFormValues) => {
+    const { date, ...rest } = values;
+    const dateStr = dayjs(date).format('YYYY-MM-DD');
+
+    // APIに渡すためのデータを安全に構築
+    const submissionData: Omit<
+      Parameters<typeof createEvents>[0],
+      'concertId'
+    > = {
+      title: rest.title,
+      place: rest.place,
+      description: rest.description,
+      isRecurring: rest.isRecurring,
+      frequency: rest.frequency,
+      interval: rest.interval,
+      weekdays: rest.weekdays,
+      until: rest.until,
+      startAt: '', // dummy
+      endAt: '', // dummy
+    };
+
+    if (rest.timeInputMode === 'specific') {
+      submissionData.startAt = `${dateStr}T${rest.startTime}`;
+      submissionData.endAt = `${dateStr}T${rest.endTime}`;
+    } else {
+      const slot = timeSlots[rest.timeSlot];
+      submissionData.startAt = `${dateStr}T${slot.start}`;
+      submissionData.endAt = `${dateStr}T${slot.end}`;
+    }
+
     try {
       if (mode === 'create') {
-        await createEvents({ concertId, ...values });
+        await createEvents({ concertId, ...submissionData });
         toast.success('イベントを作成しました');
       } else if (initialData) {
-        await updateEvent({ id: initialData._id, ...values });
+        await updateEvent({ id: initialData._id, ...submissionData });
         toast.success('イベントを更新しました');
       }
       setIsOpen(false);
-      form.reset();
     } catch (error) {
       console.error(error);
       toast.error('操作に失敗しました');
@@ -252,6 +329,45 @@ export function EventCrudDialog({
 
             <FormField
               control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>日付</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-[240px] pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground',
+                          )}
+                        >
+                          {field.value ? (
+                            dayjs(field.value).format('YYYY/MM/DD')
+                          ) : (
+                            <span>日付を選択</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="timeInputMode"
               render={({ field }) => (
                 <FormItem className="space-y-3">
@@ -259,9 +375,9 @@ export function EventCrudDialog({
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       className="flex items-center space-x-4"
-                      disabled={mode === 'edit'} // 編集モードでは変更不可
+                      disabled={mode === 'edit'}
                     >
                       <FormItem className="flex items-center space-x-2 space-y-0">
                         <FormControl>
@@ -289,12 +405,12 @@ export function EventCrudDialog({
               <div className="flex gap-4">
                 <FormField
                   control={form.control}
-                  name="startAt"
+                  name="startTime"
                   render={({ field }) => (
                     <FormItem className="flex-1">
-                      <FormLabel>開始日時</FormLabel>
+                      <FormLabel>開始時間</FormLabel>
                       <FormControl>
-                        <Input type="datetime-local" step={300} {...field} />
+                        <Input type="time" step={300} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,12 +418,12 @@ export function EventCrudDialog({
                 />
                 <FormField
                   control={form.control}
-                  name="endAt"
+                  name="endTime"
                   render={({ field }) => (
                     <FormItem className="flex-1">
-                      <FormLabel>終了日時</FormLabel>
+                      <FormLabel>終了時間</FormLabel>
                       <FormControl>
-                        <Input type="datetime-local" step={300} {...field} />
+                        <Input type="time" step={300} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -315,71 +431,31 @@ export function EventCrudDialog({
                 />
               </div>
             ) : (
-              <div className="flex flex-col md:flex-row gap-4">
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>日付</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'w-[240px] pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground',
-                              )}
-                            >
-                              {field.value ? (
-                                dayjs(field.value).format('YYYY/MM/DD')
-                              ) : (
-                                <span>日付を選択</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="timeSlot"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>コマ</FormLabel>
-                      <FormControl>
-                        <ToggleGroup
-                          type="single"
-                          variant="outline"
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          className="flex-wrap justify-start"
-                        >
-                          {Object.entries(timeSlots).map(([key, { label }]) => (
-                            <ToggleGroupItem key={key} value={key}>
-                              {label}
-                            </ToggleGroupItem>
-                          ))}
-                        </ToggleGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="timeSlot"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>コマ</FormLabel>
+                    <FormControl>
+                      <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="flex-wrap justify-start"
+                      >
+                        {Object.entries(timeSlots).map(([key, { label }]) => (
+                          <ToggleGroupItem key={key} value={key}>
+                            {label}
+                          </ToggleGroupItem>
+                        ))}
+                      </ToggleGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             <FormField

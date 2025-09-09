@@ -36,7 +36,6 @@ function HallLayoutContent({
         {
           '--sidebar-width': 'calc(var(--spacing) * 64)',
           '--header-height': 'auto',
-          minHeight: 'calc(var(--spacing) * 14)',
         } as React.CSSProperties
       }
     >

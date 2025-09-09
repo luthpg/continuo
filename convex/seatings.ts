@@ -147,9 +147,12 @@ export const createOrUpdateLayout = mutation({
       const partDoc = await ctx.db.get(part.partId);
       if (!partDoc) continue;
 
-      const isStringPart = ['Violin', 'Viola', 'Violoncello', 'Contrabass'].some(
-        (instrument) => partDoc.name.includes(instrument),
-      );
+      const isStringPart = [
+        'Violin',
+        'Viola',
+        'Violoncello',
+        'Contrabass',
+      ].some((instrument) => partDoc.name.includes(instrument));
 
       for (let i = 1; i <= part.count; i++) {
         if (isStringPart) {

@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { TAttendance, TEvent, TMember, TStatus } from '@/types/attendance';
@@ -33,6 +33,8 @@ type AttendanceTableProps = {
   initialAttendances: TAttendance[];
   concertId: Id<'concerts'>;
   onEventClick?: (event: TEvent) => void;
+  currentUser: Doc<'users'> | null;
+  isAdmin: boolean;
 };
 
 export function AttendanceTable({
@@ -41,6 +43,8 @@ export function AttendanceTable({
   initialAttendances,
   concertId,
   onEventClick,
+  currentUser,
+  isAdmin,
 }: AttendanceTableProps) {
   const isMobile = useIsMobile();
   const [attendances, setAttendances] = useState(
@@ -48,6 +52,11 @@ export function AttendanceTable({
   );
   const [highlightedMember, setHighlightedMember] =
     useState<Id<'users'> | null>(null);
+
+  const currentUserPart = useMemo(
+    () => members.find((m) => m._id === currentUser?._id)?.part,
+    [members, currentUser],
+  );
 
   useEffect(() => {
     setAttendances(
@@ -122,69 +131,78 @@ export function AttendanceTable({
   if (isMobile) {
     return (
       <Accordion type="multiple" className="w-full space-y-2">
-        {members.map((member) => (
-          <AccordionItem key={member._id} value={member._id}>
-            <AccordionTrigger className="bg-muted/50 px-4 rounded-md">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={member.imageUrl ?? undefined} />
-                  <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium text-sm">
-                    {member.displayName ?? member.name}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {member.part}
+        {members.map((member) => {
+          const isEditable = !!(
+            isAdmin ||
+            currentUser?._id === member._id ||
+            (currentUserPart && currentUserPart === member.part)
+          );
+          return (
+            <AccordionItem key={member._id} value={member._id}>
+              <AccordionTrigger className="bg-muted/50 px-4 rounded-md">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={member.imageUrl ?? undefined} />
+                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium text-sm">
+                      {member.displayName ?? member.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {member.part}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-2 pt-2 space-y-1">
-              {events.map((event) => {
-                const attendanceData = attendances.get(
-                  `${member._id}-${event._id}`,
-                );
-                return (
-                  <div
-                    key={event._id}
-                    className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50"
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-xs">
-                        {formatDate(event.startAt)} (
-                        {formatDayOfWeek(event.startAt)})
-                      </span>
-                      <span className="text-sm truncate max-w-[180px]">
-                        {event.title}
-                      </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-2 pt-2 space-y-1">
+                {events.map((event) => {
+                  const attendanceData = attendances.get(
+                    `${member._id}-${event._id}`,
+                  );
+                  return (
+                    <div
+                      key={event._id}
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-xs">
+                          {formatDate(event.startAt)} (
+                          {formatDayOfWeek(event.startAt)})
+                        </span>
+                        <span className="text-sm truncate max-w-[180px]">
+                          {event.title}
+                        </span>
+                      </div>
+                      <div className="w-20">
+                        <AttendanceCell
+                          status={attendanceData?.status ?? 'pending'}
+                          comment={attendanceData?.comment}
+                          instead={attendanceData?.instead}
+                          onUpdate={(values) =>
+                            handleAttendanceUpdate(
+                              member._id,
+                              event._id,
+                              values,
+                            )
+                          }
+                          isEditable={isEditable}
+                        />
+                      </div>
                     </div>
-                    <div className="w-20">
-                      <AttendanceCell
-                        status={attendanceData?.status ?? 'pending'}
-                        comment={attendanceData?.comment}
-                        instead={attendanceData?.instead}
-                        onUpdate={(values) =>
-                          handleAttendanceUpdate(member._id, event._id, values)
-                        }
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
+                  );
+                })}
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
       </Accordion>
     );
   }
 
   // Desktop View
   return (
-    <div
-      className="relative w-full overflow-auto rounded-lg border"
-      style={{ maxHeight: 'calc(100vh - 16rem)' }}
-    >
+    <div className="relative h-full w-full overflow-auto">
       <table className="w-full border-collapse text-sm">
         <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur-sm">
           <tr>
@@ -214,61 +232,71 @@ export function AttendanceTable({
           </tr>
         </thead>
         <tbody>
-          {members.map((member, index) => (
-            <tr
-              key={member._id}
-              className={cn(
-                'border-b last:border-none',
-                highlightedMember === member._id && 'bg-primary/10',
-              )}
-            >
-              <td
+          {members.map((member, index) => {
+            const isEditable = !!(
+              isAdmin ||
+              currentUser?._id === member._id ||
+              (currentUserPart && currentUserPart === member.part)
+            );
+            return (
+              <tr
+                key={member._id}
                 className={cn(
-                  'sticky left-0 z-10 whitespace-nowrap border-r p-2 cursor-pointer',
-                  index % 2 === 0 ? 'bg-background' : 'bg-muted',
-                  highlightedMember === member._id && 'bg-primary/20',
+                  'border-b last:border-none',
+                  highlightedMember === member._id && 'bg-primary/10',
                 )}
-                onClick={() =>
-                  setHighlightedMember(
-                    highlightedMember === member._id ? null : member._id,
-                  )
-                }
-                onKeyUp={() =>
-                  setHighlightedMember(
-                    highlightedMember === member._id ? null : member._id,
-                  )
-                }
               >
-                <div className="font-medium">{member.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {member.part}
-                </div>
-              </td>
-              {events.map((event) => {
-                const attendanceData = attendances.get(
-                  `${member._id}-${event._id}`,
-                );
-                return (
-                  <td
-                    key={event._id}
-                    className={cn(
-                      'p-0 min-w-[5rem] text-center',
-                      index % 2 === 1 && 'bg-muted',
-                    )}
-                  >
-                    <AttendanceCell
-                      status={attendanceData?.status ?? 'pending'}
-                      comment={attendanceData?.comment}
-                      instead={attendanceData?.instead}
-                      onUpdate={(values) =>
-                        handleAttendanceUpdate(member._id, event._id, values)
-                      }
-                    />
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+                <td
+                  className={cn(
+                    'sticky left-0 z-10 whitespace-nowrap border-r p-2 cursor-pointer',
+                    index % 2 === 0 ? 'bg-background' : 'bg-muted',
+                    highlightedMember === member._id && 'bg-primary/20',
+                  )}
+                  onClick={() =>
+                    setHighlightedMember(
+                      highlightedMember === member._id ? null : member._id,
+                    )
+                  }
+                  onKeyUp={() =>
+                    setHighlightedMember(
+                      highlightedMember === member._id ? null : member._id,
+                    )
+                  }
+                >
+                  <div className="font-medium">
+                    {member.displayName ?? member.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {member.part}
+                  </div>
+                </td>
+                {events.map((event) => {
+                  const attendanceData = attendances.get(
+                    `${member._id}-${event._id}`,
+                  );
+                  return (
+                    <td
+                      key={event._id}
+                      className={cn(
+                        'p-0 min-w-[5rem] text-center',
+                        index % 2 === 1 && 'bg-muted',
+                      )}
+                    >
+                      <AttendanceCell
+                        status={attendanceData?.status ?? 'pending'}
+                        comment={attendanceData?.comment}
+                        instead={attendanceData?.instead}
+                        onUpdate={(values) =>
+                          handleAttendanceUpdate(member._id, event._id, values)
+                        }
+                        isEditable={isEditable}
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
         <tfoot className="sticky bottom-0 z-20 bg-muted/95 backdrop-blur-sm">
           <tr className="border-t">

@@ -6,6 +6,7 @@ import { AttendanceTable } from '@/components/custom/AttendanceTable';
 import { EventCrudDialog } from '@/components/custom/EventCrudDialog';
 import { PartAttendanceSummary } from '@/components/custom/PartAttendanceSummary';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/convex/_generated/api';
@@ -35,6 +36,7 @@ function CalendarPageContent() {
     api.concerts.getConcertById,
     activeConcertId ? { id: activeConcertId } : 'skip',
   );
+  const currentUser = useQuery(api.users.getCurrentUser);
   const currentUserRole = useQuery(
     api.users.getCurrentUserRole,
     activeOrgId ? { organizationId: activeOrgId } : 'skip',
@@ -53,6 +55,7 @@ function CalendarPageContent() {
       events === undefined ||
       attendances === undefined ||
       concert === undefined ||
+      currentUser === undefined ||
       currentUserRole === undefined);
 
   const isAdmin = currentUserRole === 'admin' || currentUserRole === 'subAdmin';
@@ -90,12 +93,12 @@ function CalendarPageContent() {
       {isLoading ? (
         <Skeleton className="w-full h-[calc(100vh-14rem)] rounded-lg" />
       ) : activeConcertId && members && events && attendances ? (
-        <Tabs defaultValue="members" className="space-y-4">
+        <Tabs defaultValue="members" className="flex-1 flex flex-col space-y-4">
           <TabsList>
             <TabsTrigger value="members">メンバー別</TabsTrigger>
             <TabsTrigger value="parts">パート別</TabsTrigger>
           </TabsList>
-          <TabsContent value="members">
+          <TabsContent value="members" className="flex-1">
             {/* 編集用ダイアログ (非表示トリガー) */}
             <EventCrudDialog
               mode="edit"
@@ -106,13 +109,19 @@ function CalendarPageContent() {
             >
               <div></div>
             </EventCrudDialog>
-            <AttendanceTable
-              members={members}
-              events={events}
-              initialAttendances={attendances}
-              concertId={activeConcertId}
-              onEventClick={handleEventClick}
-            />
+            <Card className="h-full">
+              <CardContent className="h-full p-0">
+                <AttendanceTable
+                  members={members}
+                  events={events}
+                  initialAttendances={attendances}
+                  concertId={activeConcertId}
+                  onEventClick={handleEventClick}
+                  currentUser={currentUser ?? null}
+                  isAdmin={isAdmin}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
           <TabsContent value="parts">
             <PartAttendanceSummary

@@ -28,7 +28,7 @@ export function PartAttendanceSummary({
 
     const summaries = Array.from(membersByPart.entries()).map(
       ([partName, partMembers]) => {
-        const eventRates = events.map((event) => {
+        const eventSummaries = events.map((event) => {
           let presentCount = 0;
           partMembers.forEach((member) => {
             const status = attendances.get(`${member._id}-${event._id}`);
@@ -40,22 +40,17 @@ export function PartAttendanceSummary({
               presentCount++;
             }
           });
-          const rate = partMembers.length
-            ? (presentCount / partMembers.length) * 100
-            : 0;
-          return { eventId: event._id, rate };
+          return {
+            eventId: event._id,
+            presentCount,
+            totalCount: partMembers.length,
+          };
         });
-        return { partName, memberCount: partMembers.length, eventRates };
+        return { partName, memberCount: partMembers.length, eventSummaries };
       },
     );
     return summaries.sort((a, b) => a.partName.localeCompare(b.partName));
   }, [members, events, attendances]);
-
-  const getRateColor = (rate: number) => {
-    if (rate >= 80) return 'bg-green-200 dark:bg-green-800';
-    if (rate >= 50) return 'bg-yellow-200 dark:bg-yellow-800';
-    return 'bg-red-200 dark:bg-red-800';
-  };
 
   return (
     <div
@@ -79,40 +74,36 @@ export function PartAttendanceSummary({
           </tr>
         </thead>
         <tbody>
-          {partSummaries.map(({ partName, memberCount, eventRates }, index) => (
-            <tr key={partName} className="border-b last:border-none">
-              <td
-                className={cn(
-                  'whitespace-nowrap border-r p-2',
-                  index % 2 === 0 ? 'bg-background' : 'bg-muted',
-                )}
-              >
-                <div className="font-medium">{partName}</div>
-                <div className="text-xs text-muted-foreground">
-                  {memberCount}人
-                </div>
-              </td>
-              {eventRates.map(({ eventId, rate }) => (
+          {partSummaries.map(
+            ({ partName, memberCount, eventSummaries }, index) => (
+              <tr key={partName} className="border-b last:border-none">
                 <td
-                  key={eventId}
                   className={cn(
-                    'p-2 min-w-[5rem] text-center',
-                    index % 2 === 1 && 'bg-muted',
+                    'whitespace-nowrap border-r p-2',
+                    index % 2 === 0 ? 'bg-background' : 'bg-muted',
                   )}
                 >
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="font-semibold">{rate.toFixed(0)}%</span>
-                    <div
-                      className={cn(
-                        'h-2.5 w-2.5 rounded-full',
-                        getRateColor(rate),
-                      )}
-                    />
+                  <div className="font-medium">{partName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {memberCount}人
                   </div>
                 </td>
-              ))}
-            </tr>
-          ))}
+                {eventSummaries.map(({ eventId, presentCount, totalCount }) => (
+                  <td
+                    key={eventId}
+                    className={cn(
+                      'p-2 min-w-[5rem] text-center',
+                      index % 2 === 1 && 'bg-muted',
+                    )}
+                  >
+                    <span className="font-semibold">
+                      {presentCount}/{totalCount}人
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            ),
+          )}
         </tbody>
       </table>
     </div>
